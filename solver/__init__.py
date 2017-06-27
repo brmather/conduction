@@ -1,2 +1,2 @@
 
-from conduction3d import Conduction3D
+from conduction3d_rectilinear import Conduction3D

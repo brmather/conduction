@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 from petsc4py import PETSc
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from conduction3d import Conduction3D
+from conduction import Conduction3D
 
 
 minX, maxX = 0.0, 1.0
 minY, maxY = 1.0, 2.0
 minZ, maxZ = 3.0, 4.0
-nx, ny, nz = 10, 10, 2
+nx, ny, nz = 10, 10, 10
 
 ode = Conduction3D((minX, minY, minZ), (maxX, maxY, maxZ), (nx,ny,nz))
 
@@ -26,8 +26,8 @@ heat_sources = np.ones_like(conductivity) #* 1e1
 ode.update_properties(conductivity, heat_sources)
 
 
-ode.boundary_condition('top', 0.0, False)
-ode.boundary_condition('bottom', 1.0, True)
+ode.boundary_condition('maxY', 0.0, False)
+ode.boundary_condition('minY', 1.0, True)
 
 # print comm.rank, ode.dirichlet_mask.reshape(ode.nz, ode.ny, ode.nx)
 # ode.lvec.set(1.0)

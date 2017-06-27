@@ -28,14 +28,10 @@ class Conduction3D(object):
         self.lgmap = dm.getLGMap()
 
         # Setup matrix sizes
-        self.sizes = self.gvec.getSizes()
+        self.sizes = self.gvec.getSizes(), self.gvec.getSizes()
 
         Nx, Ny, Nz = dm.getSizes()
         N = Nx*Ny*Nz
-
-        dx = (maxX - minX)/(Nx - 1)
-        dy = (maxY - minY)/(Ny - 1)
-        dz = (maxZ - minZ)/(Nz - 1)
 
         # include ghost nodes in local domain
         (minI, maxI), (minJ, maxJ), (minK, maxK) = dm.getGhostRanges()
@@ -44,7 +40,6 @@ class Conduction3D(object):
         ny = maxJ - minJ
         nz = maxK - minK
 
-        self.dx, self.dy, self.dz = dx, dy, dz
         self.nx, self.ny, self.nz = nx, ny, nz
 
         # local numbering
@@ -53,7 +48,11 @@ class Conduction3D(object):
 
         self._initialise_mesh_variables()
         self._initialise_boundary_dictionary()
-        self._initialise_matrix()
+        self.mat = self._initialise_matrix()
+
+        # thermal properties
+        self.diffusivity  = None
+        self.heat_sources = None
 
 
 
@@ -69,33 +68,87 @@ class Conduction3D(object):
         self.minY, self.maxY = minY, maxY
         self.minZ, self.maxZ = minZ, maxZ
 
-        # thermal properties
-        self.diffusivity  = None
-        self.heat_sources = None
-
 
     def _initialise_boundary_dictionary(self):
+
+        coords = self.coords
+
+        minX, minY, minZ = self.minX, self.minY, self.minZ
+        maxX, maxY, maxZ = self.maxX, self.maxY, self.maxZ
+
+        nx, ny, nz = self.nx, self.ny, self.nz
+
+        unique_x = np.unique(coords[:,0])
+        unique_y = np.unique(coords[:,1])
+        unique_z = np.unique(coords[:,2])
+
+        dminX = unique_x[1] - unique_x[0]
+        dminY = unique_y[1] - unique_y[0]
+        dminZ = unique_z[1] - unique_z[0]
+
+        dmaxX = unique_x[-1] - unique_x[-2]
+        dmaxY = unique_y[-1] - unique_y[-2]
+        dmaxZ = unique_z[-1] - unique_z[-2]
+
         # Setup boundary dictionary
         self.bc = dict()
-        self.bc["maxY"] = {"val": 0.0, "delta": self.dy, "flux": True, "mask": self.coords[:,1]==self.maxY}
-        self.bc["minY"] = {"val": 0.0, "delta": self.dy, "flux": True, "mask": self.coords[:,1]==self.minY}
-        self.bc["minX"] = {"val": 0.0, "delta": self.dx, "flux": True, "mask": self.coords[:,0]==self.minX}
-        self.bc["maxX"] = {"val": 0.0, "delta": self.dx, "flux": True, "mask": self.coords[:,0]==self.maxX}
-        self.bc["minZ"] = {"val": 0.0, "delta": self.dz, "flux": True, "mask": self.coords[:,2]==self.minZ}
-        self.bc["maxZ"] = {"val": 0.0, "delta": self.dz, "flux": True, "mask": self.coords[:,2]==self.maxZ}
+        self.bc["minX"] = {"val": 0.0, "delta": dminX, "flux": True, "mask": coords[:,0]==minX}
+        self.bc["maxX"] = {"val": 0.0, "delta": dmaxX, "flux": True, "mask": coords[:,0]==maxX}
+        self.bc["minY"] = {"val": 0.0, "delta": dminY, "flux": True, "mask": coords[:,1]==minY}
+        self.bc["maxY"] = {"val": 0.0, "delta": dmaxY, "flux": True, "mask": coords[:,1]==maxY}
+        self.bc["minZ"] = {"val": 0.0, "delta": dminZ, "flux": True, "mask": coords[:,2]==minZ}
+        self.bc["maxZ"] = {"val": 0.0, "delta": dmaxZ, "flux": True, "mask": coords[:,2]==maxZ}
 
 
-        self.dirichlet_mask = np.zeros(self.nx*self.ny*self.nz, dtype=bool)
+        self.dirichlet_mask = np.zeros(nx*ny*nz, dtype=bool)
 
 
     def _initialise_matrix(self):
-        # read into matrix
-        self.mat = PETSc.Mat().create(comm=comm)
-        self.mat.setType('aij')
-        self.mat.setSizes(self.sizes)
-        self.mat.setLGMap(self.lgmap)
-        self.mat.setFromOptions()
-        self.mat.setPreallocationNNZ((7,6))
+        """
+        There should be no mallocs but we turn off the error just to be sure.
+        If there is it will be from users adjusting the BCs.
+
+        Could push zeros into the matrix to allocate all potential entries
+        but that would lengthen the build stage.
+        """
+        mat = PETSc.Mat().create(comm=comm)
+        mat.setType('aij')
+        mat.setSizes(self.sizes)
+        mat.setLGMap(self.lgmap)
+        mat.setPreallocationNNZ((7,6))
+        mat.setOption(PETSc.Mat.Option.NEW_NONZERO_ALLOCATION_ERR, 0)
+        mat.setFromOptions()
+        
+        return mat
+
+
+    def refine(self, x_fn=None, y_fn=None, z_fn=None):
+        """
+        Pass a function to apply to the x,y,z coordinates on the mesh.
+        The domain will be redefined accordingly.
+        """
+        fn = lambda x: x
+        if x_fn is None: x_fn = fn
+        if y_fn is None: y_fn = fn
+        if z_fn is None: z_fn = fn
+
+        v = self.dm.getCoordinatesLocal()
+        coords = v.array.reshape(-1,3)
+
+        coords[:,0] = x_fn(coords[:,0])
+        coords[:,1] = y_fn(coords[:,1])
+        coords[:,2] = z_fn(coords[:,2])
+
+        if not np.isfinite(coords).all():
+            raise ValueError('A function has created NaNs or Inf numbers')
+
+        v.setArray(coords.ravel())
+
+        self.dm.setCoordinatesLocal(v)
+
+        self._initialise_mesh_variables()
+        self._initialise_boundary_dictionary()
+        self.mat = self._initialise_matrix()
 
 
     def update_properties(self, diffusivity, heat_sources):
@@ -116,25 +169,23 @@ class Conduction3D(object):
 
         val can be a vector with the same number of elements as the wall
         """
+        wall = str(wall)
 
-
-        # (minX, maxX), (minY, maxY), (minZ, maxZ)
-
-        if self.bc.has_key(str(wall)):
-            self.bc[str(wall)]["val"]  = val
-            self.bc[str(wall)]["flux"] = flux
-            d = self.bc[str(wall)]
+        if wall in self.bc:
+            self.bc[wall]["val"]  = val
+            self.bc[wall]["flux"] = flux
+            d = self.bc[wall]
 
             mask = d['mask']
 
             if flux:
-                self.dirichlet_mask[mask] = False                
-                self.bc[str(wall)]["val"] /= -d['delta']
+                self.dirichlet_mask[mask] = False
+                self.bc[wall]["val"] /= -d['delta']
             else:
                 self.dirichlet_mask[mask] = True
 
         else:
-            raise ValueError("Wall should be one of 'top', 'bottom', 'left', 'right'")
+            raise ValueError("Wall should be one of {}".format(self.bc.keys()))
 
 
 
@@ -153,20 +204,11 @@ class Conduction3D(object):
         if in_place:
             mat = self.mat
         else:
-            mat = PETSc.Mat().create(comm=comm)
-            mat.setType('aij')
-            mat.setSizes(self.sizes)
-            mat.setLGMap(self.lgmap)
-            mat.setFromOptions()
-            mat.setPreallocationNNZ((7,comm.size-1))
+            mat = self._initialise_matrix()
 
         nodes = self.nodes
         nx, ny, nz = self.nx, self.ny, self.nz
         n = nx*ny*nz
-
-        adx = 1.0/(2*self.dx**2)
-        ady = 1.0/(2*self.dy**2)
-        adz = 1.0/(2*self.dz**2)
 
         u = self.diffusivity.reshape(nz,ny,nx)
 
@@ -186,7 +228,6 @@ class Conduction3D(object):
 
         closure = [(0,-2), (1,-1), (1,-1), (2,0), (1,-1), (1,-1), (1,-1)]
         #         N    W    F    S    E    B    C
-        delta = [ady, adx, adz, ady, adx, adz, 0.0]
 
         for i in range(7):
             rs, re = closure[i]
@@ -195,8 +236,12 @@ class Conduction3D(object):
 
             rows[i] = nodes
             cols[i] = index[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2].ravel()
-            vals[i] = delta[i]*(k[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2] + u).ravel()
-            print delta[i]
+
+            distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+            distance[distance==0] = 1e-12 # protect against dividing by zero
+            delta = 1.0/(2.0*distance**2)
+
+            vals[i] = delta*(k[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2] + u).ravel()
 
 
         # Dirichlet boundary conditions (duplicates are summed)
@@ -220,13 +265,15 @@ class Conduction3D(object):
 
 
         # mask off-grid entries and sum duplicates
-        mask = col > -1
+        mask = col >= 0
         row, col, val = sum_duplicates(row[mask], col[mask], val[mask])
 
 
         # indptr, col, val = coo_tocsr(row, col, val)
         nnz = np.bincount(row)
         indptr = np.insert(np.cumsum(nnz),0,0)
+
+        print row.max(), col.max()
 
         mat.assemblyBegin()
         mat.setValuesLocalCSR(indptr.astype(PETSc.IntType), col, val)
