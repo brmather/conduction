@@ -54,25 +54,26 @@ class Conduction3D(object):
 
 
         # Setup boundary dictionary
-        self.bc = {"top": None, "bottom": None, "left": None, "right": None, "front": None, "back": None}
+        self.bc = dict()
         # self.bc["top"]    = {"val": 0.0, "where": (1,maxY), "delta": dy, "flux": True, "mask": ((0,Nz),(0,1),(0,Nx))}
         # self.bc["bottom"] = {"val": 0.0, "where": (1,minY), "delta": dy, "flux": True, "mask": ((0,Nz),(Ny-1,Ny),(0,Nx))}
         # self.bc["left"]   = {"val": 0.0, "where": (0,minX), "delta": dx, "flux": True, "mask": ((0,Nz),(0,Ny),(0,1))}
         # self.bc["right"]  = {"val": 0.0, "where": (0,maxX), "delta": dx, "flux": True, "mask": ((0,Nz),(0,Ny),(Nx-1,Nx))}
         # self.bc["front"]  = {"val": 0.0, "where": (2,minZ), "delta": dz, "flux": True, "mask": ((0,1),(0,Ny),(0,Nx))}
         # self.bc["back"]   = {"val": 0.0, "where": (2,maxZ), "delta": dz, "flux": True, "mask": ((Nz-1,Nz),(0,Ny),(0,Nx))}
-        self.bc["top"]    = {"val": 0.0, "delta": dy, "flux": True, "mask": self.coords[:,1]==maxY}
-        self.bc["bottom"] = {"val": 0.0, "delta": dy, "flux": True, "mask": self.coords[:,1]==minY}
-        self.bc["left"]   = {"val": 0.0, "delta": dx, "flux": True, "mask": self.coords[:,0]==minX}
-        self.bc["right"]  = {"val": 0.0, "delta": dx, "flux": True, "mask": self.coords[:,0]==maxX}
-        self.bc["front"]  = {"val": 0.0, "delta": dz, "flux": True, "mask": self.coords[:,2]==minZ}
-        self.bc["back"]   = {"val": 0.0, "delta": dz, "flux": True, "mask": self.coords[:,2]==maxZ}
+        self.bc["maxY"] = {"val": 0.0, "delta": dy, "flux": True, "mask": self.coords[:,1]==maxY}
+        self.bc["minY"] = {"val": 0.0, "delta": dy, "flux": True, "mask": self.coords[:,1]==minY}
+        self.bc["minX"] = {"val": 0.0, "delta": dx, "flux": True, "mask": self.coords[:,0]==minX}
+        self.bc["maxX"] = {"val": 0.0, "delta": dx, "flux": True, "mask": self.coords[:,0]==maxX}
+        self.bc["minZ"] = {"val": 0.0, "delta": dz, "flux": True, "mask": self.coords[:,2]==minZ}
+        self.bc["maxZ"] = {"val": 0.0, "delta": dz, "flux": True, "mask": self.coords[:,2]==maxZ}
 
 
         self.dirichlet_mask = np.zeros(nx*ny*nz, dtype=bool)
 
 
-        (minX, maxX), (minY, maxY), (minZ, maxZ) = dm.getLocalBoundingBox()
+        minX, minY, minZ = self.coords.min(axis=0)
+        maxX, maxY, maxZ = self.coords.max(axis=0)
 
         self.minX, self.maxX = minX, maxX
         self.minY, self.maxY = minY, maxY
@@ -82,20 +83,16 @@ class Conduction3D(object):
         self.diffusivity  = None
         self.heat_sources = None
 
-
-        n = 1
-        for r in dm.getRanges():
-            n *= r[1]-r[0]
-
         # Setup matrix sizes
-        self.sizes = (n,N), (n,N)
+        self.sizes = self.gvec.getSizes()
+
         # read into matrix
         self.mat = PETSc.Mat().create(comm=comm)
         self.mat.setType('aij')
         self.mat.setSizes(self.sizes)
         self.mat.setLGMap(self.lgmap)
         self.mat.setFromOptions()
-        self.mat.setPreallocationNNZ((7,comm.size-1))
+        self.mat.setPreallocationNNZ((7,6))
 
 
 

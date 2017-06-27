@@ -6,6 +6,7 @@ Implicit heat conduction solver on a structured grid written in Python. It inter
 
 - Python 2.7 and above
 - Numpy 1.9 and above
+- Scipy 0.14 and above
 - [mpi4py](http://pythonhosted.org/mpi4py/usrman/index.html)
 - [petsc4py](https://pythonhosted.org/petsc4py/usrman/install.html)
 - [h5py](http://docs.h5py.org/en/latest/mpi.html#building-against-parallel-hdf5) (optional - for saving parallel data)
