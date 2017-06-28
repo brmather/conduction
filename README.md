@@ -14,7 +14,7 @@ Implicit heat conduction solver on a structured grid written in Python. It inter
 
 ### PETSc installation
 
-PETSc is used extensively via the Python frontend, petsc4py. It is required that PETSc be configured and installed on your local machine prior to using Quagmire. You can use pip to install petsc4py and its dependencies.
+PETSc is used extensively via the Python frontend, petsc4py. It is required that PETSc be configured and installed on your local machine prior to using this module. You can use pip to install petsc4py and its dependencies.
 
 ```
 pip install [--user] numpy mpi4py
