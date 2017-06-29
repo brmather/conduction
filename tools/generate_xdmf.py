@@ -1,6 +1,7 @@
 def generateXdmf(HDF5_filename):
 
     import h5py
+    import os
 
     filename = HDF5_filename
     if HDF5_filename.endswith('.h5'):
@@ -47,6 +48,7 @@ def generateXdmf(HDF5_filename):
 
 
     h5file = h5py.File(HDF5_filename, 'r')
+    basename = os.path.basename(HDF5_filename)
 
     # get topology attributes
     topo = h5file['topology']
@@ -69,7 +71,7 @@ def generateXdmf(HDF5_filename):
             if all(dset.shape != shape):
                 raise ValueError('Dataset should be of shape {}'.format(shape))
 
-            dpath = HDF5_filename + ":" + dset.name
+            dpath = basename + ":" + dset.name
             dname = dset.name[1:]
             dshape = array_to_string(dset.shape)
 

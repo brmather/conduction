@@ -49,10 +49,26 @@ class Conduction3D(object):
         self._initialise_mesh_variables()
         self._initialise_boundary_dictionary()
         self.mat = self._initialise_matrix()
+        self._initialise_COO_vectors()
 
         # thermal properties
         self.diffusivity  = None
         self.heat_sources = None
+
+
+    def _initialise_COO_vectors(self):
+
+        nx, ny, nz = self.nx, self.ny, self.nz
+        n = nx*ny*nz
+
+        index = np.empty((nz+2, ny+2, nx+2), dtype=PETSc.IntType)
+        index.fill(-1)
+        index[1:-1,1:-1,1:-1] = self.nodes.reshape(nz,ny,nx)
+        self.index = index
+
+        self.rows = np.empty((7,n), dtype=PETSc.IntType)
+        self.cols = np.empty((7,n), dtype=PETSc.IntType)
+        self.vals = np.empty((7,n))
 
 
 
@@ -156,8 +172,9 @@ class Conduction3D(object):
         Update diffusivity and heat sources
         """
 
-        self.diffusivity = np.asarray(diffusivity)
-        self.heat_sources = np.asarray(heat_sources)
+
+        self.diffusivity = self.sync(diffusivity)
+        self.heat_sources = self.sync(heat_sources)
 
 
     def boundary_condition(self, wall, val, flux=True):
@@ -210,26 +227,24 @@ class Conduction3D(object):
         nx, ny, nz = self.nx, self.ny, self.nz
         n = nx*ny*nz
 
+        index = self.index
+
+        rows = self.rows
+        cols = self.cols
+        vals = self.vals
+
+        dirichlet_mask = self.dirichlet_mask
+
         u = self.diffusivity.reshape(nz,ny,nx)
 
         k = np.zeros((nz+2, ny+2, nx+2))
         k[1:-1,1:-1,1:-1] = u
 
-        index = np.empty((nz+2, ny+2, nx+2), dtype=PETSc.IntType)
-        index.fill(-1)
-        index[1:-1,1:-1,1:-1] = nodes.reshape(nz,ny,nx)
-
-        rows = np.empty((7,n), dtype=PETSc.IntType)
-        cols = np.empty((7,n), dtype=PETSc.IntType)
-        vals = np.empty((7,n))
-
-        dirichlet_mask = self.dirichlet_mask
-
 
         closure = [(0,-2), (1,-1), (1,-1), (2,0), (1,-1), (1,-1), (1,-1)]
         #         N    W    F    S    E    B    C
 
-        for i in range(7):
+        for i in range(0, 7):
             rs, re = closure[i]
             cs, ce = closure[-1+i]
             ds, de = closure[-2+i]
@@ -273,7 +288,6 @@ class Conduction3D(object):
         nnz = np.bincount(row)
         indptr = np.insert(np.cumsum(nnz),0,0)
 
-        print row.max(), col.max()
 
         mat.assemblyBegin()
         mat.setValuesLocalCSR(indptr.astype(PETSc.IntType), col, val)
@@ -332,11 +346,101 @@ class Conduction3D(object):
         ksp = PETSc.KSP().create(comm=comm)
         ksp.setType(solver)
         ksp.setOperators(matrix)
+        pc = ksp.getPC()
+        pc.setType('gamg')
         ksp.setFromOptions()
         ksp.setTolerances(1e-10, 1e-50)
         ksp.solve(rhs, res)
         return res.array
 
+
+    def sync(self, vector):
+        self.lvec.setArray(vector)
+        self.dm.localToGlobal(self.lvec, self.gvec)
+        self.dm.globalToLocal(self.gvec, self.lvec)
+        return self.lvec.array.copy()
+
+
+    def gradient(self, vector):
+        # OK for the rectilinear this will take a bit more work
+        pass
+
+
+    def save_mesh_to_hdf5(self, filename):
+
+        import h5py
+
+        filename = str(filename)
+        if not filename.endswith('.h5'):
+            filename += '.h5'
+
+        ViewHDF5 = PETSc.Viewer()
+        ViewHDF5.createHDF5(filename, mode='w')
+        ViewHDF5.view(obj=self.dm)
+        ViewHDF5.destroy()
+
+        if comm.rank == 0:
+            f = h5py.File(filename, 'r+')
+            f.create_group('topology')
+            topo = f['topology']
+
+            # create attributes
+            (minX, maxX), (minY, maxY), (minZ, maxZ) = self.dm.getBoundingBox()
+            minCoord = np.array([minX, minY, minZ])
+            maxCoord = np.array([maxX, maxY, maxZ])
+            shape = self.dm.getSizes()
+
+            topo.attrs.create('minCoord', minCoord)
+            topo.attrs.create('maxCoord', maxCoord)
+            topo.attrs.create('shape', np.array(shape))
+
+            f.close()
+
+
+    def save_field_to_hdf5(self, filename, *args, **kwargs):
+        """
+        Saves data on the mesh to an HDF5 file
+         e.g. height, rainfall, sea level, etc.
+
+        Pass these as arguments or keyword arguments for
+        their names to be saved to the hdf5 file
+        """
+        import os.path
+
+        filename = str(filename)
+        if not filename.endswith('.h5'):
+            filename += '.h5'
+
+        # write mesh if it doesn't exist
+        # if not os.path.isfile(file):
+        #     self.save_mesh_to_hdf5(file)
+
+        kwdict = kwargs
+        for i, arg in enumerate(args):
+            key = "arr_{}".format(i)
+            if key in kwdict.keys():
+                raise ValueError("Cannot use un-named variables\
+                                  and keyword: {}".format(key))
+            kwdict[key] = arg
+
+        vec = self.gvec.duplicate()
+
+        for key in kwdict:
+            val = kwdict[key]
+            try:
+                vec.setArray(val)
+            except:
+                self.lvec.setArray(val)
+                self.dm.localToGlobal(self.lvec, vec)
+
+            vec.setName(key)
+
+            ViewHDF5 = PETSc.Viewer()
+            ViewHDF5.createHDF5(filename, mode='a')
+            ViewHDF5.view(obj=vec)
+            ViewHDF5.destroy()
+
+        vec.destroy()
 
 
 def csr_tocoo(indptr, indices, data):
