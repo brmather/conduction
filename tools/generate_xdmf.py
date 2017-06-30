@@ -24,7 +24,7 @@ def generateXdmf(HDF5_filename):
     def write_footer(f):
         f.write('''    </Grid>\n  </Domain>\n</Xdmf>''')
 
-    def write_geometry(f, dim, shape, minCoords, maxCoords):
+    def write_geometry(f, dim, shape, origin, stride):
         f.write('''      <Topology TopologyType="3DCORECTMesh" NumberOfElements="{1}"/>\n\
       <Geometry GeometryType="ORIGIN_DXDYDZ">\n\
         <DataItem Dimensions="{0}" NumberType="Float" Precision="4" Format="XML">\n\
@@ -33,7 +33,7 @@ def generateXdmf(HDF5_filename):
         <DataItem Dimensions="{0}" NumberType="Float" Precision="4" Format="XML">\n\
           {3}\n\
         </DataItem>\n\
-      </Geometry>\n'''.format(dim, shape, minCoords, maxCoords))
+      </Geometry>\n'''.format(dim, shape, origin, stride))
 
     def write_attribute(f, attributeName, dshape, dpath):
         f.write('''      <Attribute Name="{0}" AttributeType="Scalar" Center="Cell">'\n\
@@ -56,20 +56,22 @@ def generateXdmf(HDF5_filename):
     maxCoords = topo.attrs['maxCoord']
     shape = topo.attrs['shape']
 
+    stride = maxCoords - minCoords
+
     tshape = array_to_string(shape)
-    tminCoords = array_to_string(minCoords)
-    tmaxCoords = array_to_string(maxCoords)
+    torigin = array_to_string(minCoords)
+    tstride = array_to_string(stride)
 
     write_header(f)
-    write_geometry(f, len(shape), tshape, tminCoords, tmaxCoords)
+    write_geometry(f, len(shape), tshape, torigin, tstride)
 
     for key in h5file:
         dset = h5file[key]
 
         # We only want datasets, topology group is not required
         if type(dset) is h5py.Dataset:
-            if all(dset.shape != shape):
-                raise ValueError('Dataset should be of shape {}'.format(shape))
+            # if all(dset.shape != shape):
+            #     raise ValueError('Dataset should be of shape {}'.format(shape))
 
             dpath = basename + ":" + dset.name
             dname = dset.name[1:]

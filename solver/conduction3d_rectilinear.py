@@ -332,7 +332,7 @@ class Conduction3D(object):
         return rhs
 
 
-    def solve(self, solver='gmres'):
+    def solve(self, solver='bcgs'):
         """
         Construct the matrix A and vector b in Ax = b
         and solve for x
@@ -346,8 +346,8 @@ class Conduction3D(object):
         ksp = PETSc.KSP().create(comm=comm)
         ksp.setType(solver)
         ksp.setOperators(matrix)
-        pc = ksp.getPC()
-        pc.setType('gamg')
+        # pc = ksp.getPC()
+        # pc.setType('gamg')
         ksp.setFromOptions()
         ksp.setTolerances(1e-10, 1e-50)
         ksp.solve(rhs, res)
@@ -390,9 +390,9 @@ class Conduction3D(object):
             maxCoord = np.array([maxX, maxY, maxZ])
             shape = self.dm.getSizes()
 
-            topo.attrs.create('minCoord', minCoord)
-            topo.attrs.create('maxCoord', maxCoord)
-            topo.attrs.create('shape', np.array(shape))
+            topo.attrs.create('minCoord', minCoord[::-1])
+            topo.attrs.create('maxCoord', maxCoord[::-1])
+            topo.attrs.create('shape', np.array(shape)[::-1])
 
             f.close()
 
