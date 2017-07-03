@@ -38,7 +38,11 @@ Download the latest version of [PETSc](https://www.mcs.anl.gov/petsc/download/in
 
     ./configure MPI-DIR=$MPI_DIR --with-mpi-dir=$MPI_DIR --with-hdf5-dir=$HDF5_DIR --with-shared-libraries --download-fblaslapack --download-scalapack --download-triangle --download-mumps --download-chaco --download-ctetgen --download-hypre --prefix=/path/to/install-dir
 
-Follow the make instructions from the command line once configuration is complete. This will install PETSc and run some tests to ensure it is functioning properly.
+Follow the make instructions from the command line once configuration is complete. This will install PETSc and run some tests to ensure it is functioning properly. Now export the path:
+
+    export PETSC_DIR=/path/to/install-dir
+    export LD_LIBRARY_PATH=$PETSC_DIR/lib:$LD_LIBRARY_PATH
+    export PATH=$PETSC_DIR/bin:$PATH
 
 
 ## Install Python bindings
