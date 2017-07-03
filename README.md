@@ -21,7 +21,7 @@ pip install [--user] numpy mpi4py
 pip install [--user] petsc petsc4py
 ```
 
-If that fails you must compile these dependencies manually.
+If that fails you must [compile](https://git.dias.ie/itherc/conduction/blob/master/COMPILE.md) these dependencies manually.
 
 ## Usage
 
