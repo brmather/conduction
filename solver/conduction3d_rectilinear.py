@@ -25,6 +25,8 @@ class Conduction3D(object):
         self.lvec = dm.createLocalVector()
         self.gvec = dm.createGlobalVector()
         self.rhs = dm.createGlobalVector()
+        self.res = dm.createGlobalVector()
+        self.lres = dm.createLocalVector()
         self.lgmap = dm.getLGMap()
 
         # Setup matrix sizes
@@ -54,6 +56,7 @@ class Conduction3D(object):
         # thermal properties
         self.diffusivity  = None
         self.heat_sources = None
+        self.temperature = self.lres.array
 
 
     def _initialise_COO_vectors(self):
@@ -341,7 +344,8 @@ class Conduction3D(object):
         """
         matrix = self.construct_matrix()
         rhs = self.construct_rhs()
-        res = self.dm.createGlobalVector()
+        res = self.res
+        lres = self.lres
 
         ksp = PETSc.KSP().create(comm=comm)
         ksp.setType(solver)
@@ -351,7 +355,9 @@ class Conduction3D(object):
         ksp.setFromOptions()
         ksp.setTolerances(1e-10, 1e-50)
         ksp.solve(rhs, res)
-        return res.array
+        # We should hand this back to local vectors
+        self.dm.globalToLocal(res, lres)
+        return lres.array
 
 
     def sync(self, vector):
