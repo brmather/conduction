@@ -12,6 +12,8 @@ except: pass
 
 nsim = 5
 
+timing_dict = dict()
+
 
 def timings(func, *args):
     t = clock()
@@ -22,6 +24,7 @@ def timings(func, *args):
     ttime = (clock() - t)/nsim
     if comm.rank == 0:
         print("{} took {}s".format(func.__name__, ttime))
+        timing_dict[func.__name__] = ttime
 
 
 
@@ -55,8 +58,9 @@ ksp.setTolerances(rtol=1e-10, atol=1e-50)
 ksp.setOperators(mat)
 ksp.setFromOptions()
 
-
-ksp.solve(rhs, res)
+def solve(ksp, rhs, res):
+    res.set(0.0)
+    ksp.solve(rhs, res)
 
 
 
@@ -68,4 +72,32 @@ timings(ode.boundary_condition, 'maxY', 0.0, False)
 timings(ode.boundary_condition, 'minY', 1.0, True)
 timings(ode.construct_matrix)
 timings(ode.construct_rhs)
-timings(ksp.solve, rhs, res)
+timings(solve, ksp, rhs, res)
+
+
+### Write to file
+
+filename = 'timings.csv'
+keys = sorted(timing_dict.keys())
+
+if comm.rank == 0:
+    import os, csv
+
+    # write header if file doesn't exist
+    if not os.path.isfile(filename):
+        with open(filename, 'wb') as f:
+            writer = csv.writer(f, delimiter=' ')
+            row = list(keys)
+            row.insert(0, 'procs')
+            writer.writerow(row)
+
+    row = [0]*(len(keys)+1)
+    row[0] = comm.size
+    for i, key in enumerate(keys):
+        row[i+1] = timing_dict[key]
+
+    with open(filename, 'a') as f:
+        writer = csv.writer(f, delimiter=' ')
+        writer.writerow(row)
+
+    print("Done!")
