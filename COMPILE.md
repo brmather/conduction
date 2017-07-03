@@ -19,7 +19,7 @@ Now export the path
 
 ## HDF5
 
-It is imperitive that you have the parallel version of HDF5. Obtain the latest version of HDF5 [here](https://support.hdfgroup.org/HDF5/release/obtainsrc518.html) and extract it anywhere. You must link your installed MPI path as follows:
+It is imperitive that you have the parallel version of HDF5. Obtain the latest version of [HDF5](https://support.hdfgroup.org/HDF5/release/obtainsrc518.html) and extract it anywhere. You must link your installed MPI path as follows:
 
     CC=$MPI_DIR/bin/mpicc FC=$MPI_DIR/bin/mpifort ./configure --enable-shared --enable-parallel --enable-fortran --prefix=/path/to/install-dir
     make all
@@ -50,15 +50,15 @@ We recommend doing this using `pip`,
 or equivalent on other operating systems.
 `pip` can be instructed to install to your home directory with the `--user` flag, e.g. `pip install --user numpy`. You can also upgrade an existing package by passing the `--upgrade` flag.
 
-- **mpi4py**
+### mpi4py
 
     CC=$MPI_DIR/bin/mpicc MPICC=$MPI_DIR/bin/mpicc MPI_DIR=$MPI_DIR pip install mpi4py
 
-- **h5py**
+### h5py
 
     CC=$MPI_DIR/bin/mpicc HDF5_DIR=$HDF5_DIR HDF5_MPI="on" pip install h5py
 
-- **petsc4py**
+### petsc4py
 
     PETSC_DIR=$PETSC_DIR PETSC_ARCH=$PETSC_ARCH pip install petsc4py
 
