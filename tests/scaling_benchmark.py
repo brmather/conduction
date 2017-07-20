@@ -32,7 +32,7 @@ def timings(func, *args):
 minX, maxX = 0.0, 1.0
 minY, maxY = 1.0, 2.0
 minZ, maxZ = 3.0, 4.0
-nx, ny, nz = 100, 100, 100
+nx, ny, nz = 100, 100, 1000
 
 ode = Conduction3D((minX, minY, minZ), (maxX, maxY, maxZ), (nx,ny,nz))
 

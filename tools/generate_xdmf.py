@@ -36,7 +36,7 @@ def generateXdmf(HDF5_filename):
       </Geometry>\n'''.format(dim, shape, origin, stride))
 
     def write_attribute(f, attributeName, dshape, dpath):
-        f.write('''      <Attribute Name="{0}" AttributeType="Scalar" Center="Cell">'\n\
+        f.write('''      <Attribute Name="{0}" AttributeType="Scalar" Center="Node">'\n\
         <DataItem Dimensions="{1}" NumberType="Float" Precision="4" Format="HDF">{2}</DataItem>\n\
       </Attribute>\n'''.format(attributeName, dshape, dpath))
 
@@ -56,7 +56,7 @@ def generateXdmf(HDF5_filename):
     maxCoords = topo.attrs['maxCoord']
     shape = topo.attrs['shape']
 
-    stride = maxCoords - minCoords
+    stride = (maxCoords - minCoords)/shape
 
     tshape = array_to_string(shape)
     torigin = array_to_string(minCoords)

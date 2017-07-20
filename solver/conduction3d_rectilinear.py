@@ -17,6 +17,9 @@ class Conduction3D(object):
         maxX, maxY, maxZ = tuple(maxCoord)
         resI, resJ, resK = tuple(res)
 
+        self.minX, self.maxX = minX, maxX
+        self.minY, self.maxY = minY, maxY
+        self.minZ, self.maxZ = minZ, maxZ
 
         dm = PETSc.DMDA().create(dim=3, sizes=[resI, resJ, resK], stencil_width=1, comm=comm)
         dm.setUniformCoordinates(minX, maxX, minY, maxY, minZ, maxZ)
@@ -77,15 +80,18 @@ class Conduction3D(object):
 
     def _initialise_mesh_variables(self):
 
-        # local coordinates
-        self.coords = self.dm.getCoordinatesLocal().array.reshape(-1,3)
-
-        minX, minY, minZ = self.coords.min(axis=0)
-        maxX, maxY, maxZ = self.coords.max(axis=0)
+        (minX, maxX), (minY, maxY), (minZ, maxZ) = self.dm.getBoundingBox()
 
         self.minX, self.maxX = minX, maxX
         self.minY, self.maxY = minY, maxY
         self.minZ, self.maxZ = minZ, maxZ
+
+        # local coordinates
+        self.coords = self.dm.getCoordinatesLocal().array.reshape(-1,3)
+
+        self.Xcoords = np.unique(self.coords[:,0])
+        self.Ycoords = np.unique(self.coords[:,1])
+        self.Zcoords = np.unique(self.coords[:,2])
 
 
     def _initialise_boundary_dictionary(self):
@@ -97,17 +103,18 @@ class Conduction3D(object):
 
         nx, ny, nz = self.nx, self.ny, self.nz
 
-        unique_x = np.unique(coords[:,0])
-        unique_y = np.unique(coords[:,1])
-        unique_z = np.unique(coords[:,2])
+        Xcoords = self.Xcoords
+        Ycoords = self.Ycoords
+        Zcoords = self.Zcoords
 
-        dminX = unique_x[1] - unique_x[0]
-        dminY = unique_y[1] - unique_y[0]
-        dminZ = unique_z[1] - unique_z[0]
+        dminX = Xcoords[1] - Xcoords[0]
+        dminY = Ycoords[1] - Ycoords[0]
+        dminZ = Zcoords[1] - Zcoords[0]
 
-        dmaxX = unique_x[-1] - unique_x[-2]
-        dmaxY = unique_y[-1] - unique_y[-2]
-        dmaxZ = unique_z[-1] - unique_z[-2]
+        dmaxX = Xcoords[-1] - Xcoords[-2]
+        dmaxY = Ycoords[-1] - Ycoords[-2]
+        dmaxZ = Zcoords[-1] - Zcoords[-2]
+
 
         # Setup boundary dictionary
         self.bc = dict()
@@ -145,6 +152,11 @@ class Conduction3D(object):
         """
         Pass a function to apply to the x,y,z coordinates on the mesh.
         The domain will be redefined accordingly.
+
+        Notes
+        -----
+         We do it this way to make sure the domain is balanced across
+         processors. Adding new nodes would unbalance the matrix.
         """
         fn = lambda x: x
         if x_fn is None: x_fn = fn
@@ -256,7 +268,7 @@ class Conduction3D(object):
             cols[i] = index[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2].ravel()
 
             distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
-            distance[distance==0] = 1e-12 # protect against dividing by zero
+            distance[distance==0] = 1e12 # protect against dividing by zero
             delta = 1.0/(2.0*distance**2)
 
             vals[i] = delta*(k[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2] + u).ravel()
@@ -368,8 +380,13 @@ class Conduction3D(object):
 
 
     def gradient(self, vector):
-        # OK for the rectilinear this will take a bit more work
-        pass
+
+        Xcoords = self.Xcoords
+        Ycoords = self.Ycoords
+        Zcoords = self.Zcoords
+
+        Vx, Vy, Vz = np.gradient(vector, Xcoords, Ycoords, Zcoords)
+        return Vx, Vy, Vz
 
 
     def save_mesh_to_hdf5(self, filename):
@@ -385,22 +402,22 @@ class Conduction3D(object):
         ViewHDF5.view(obj=self.dm)
         ViewHDF5.destroy()
 
-        if comm.rank == 0:
-            f = h5py.File(filename, 'r+')
-            f.create_group('topology')
-            topo = f['topology']
+        # Every processor is writing the same thing
+        f = h5py.File(filename, 'r+')
+        f.create_group('topology')
+        topo = f['topology']
 
-            # create attributes
-            (minX, maxX), (minY, maxY), (minZ, maxZ) = self.dm.getBoundingBox()
-            minCoord = np.array([minX, minY, minZ])
-            maxCoord = np.array([maxX, maxY, maxZ])
-            shape = self.dm.getSizes()
+        # create attributes
+        (minX, maxX), (minY, maxY), (minZ, maxZ) = self.dm.getBoundingBox()
+        minCoord = np.array([minX, minY, minZ])
+        maxCoord = np.array([maxX, maxY, maxZ])
+        shape = self.dm.getSizes()
 
-            topo.attrs.create('minCoord', minCoord[::-1])
-            topo.attrs.create('maxCoord', maxCoord[::-1])
-            topo.attrs.create('shape', np.array(shape)[::-1])
+        topo.attrs.create('minCoord', minCoord[::-1])
+        topo.attrs.create('maxCoord', maxCoord[::-1])
+        topo.attrs.create('shape', np.array(shape)[::-1])
 
-            f.close()
+        f.close()
 
 
     def save_field_to_hdf5(self, filename, *args, **kwargs):

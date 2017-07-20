@@ -196,7 +196,6 @@ class Conduction3D(object):
             rows[i] = nodes
             cols[i] = index[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2].ravel()
             vals[i] = delta[i]*(k[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2] + u).ravel()
-            print delta[i]
 
 
         # Dirichlet boundary conditions (duplicates are summed)
