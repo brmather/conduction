@@ -15,12 +15,13 @@ from scipy.interpolate import RegularGridInterpolator, SmoothBivariateSpline, Re
 import conduction
 from time import clock
 
+from petsc4py import PETSc
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 
 
-directory = '/mnt/home_geo/mguerri/Documents/itherc/fullea_et_al_2014_0/'
+directory = '/opt/ben/'
 
 layer_attributes = np.loadtxt(directory+'layers.info', skiprows=1, usecols=(2,3,4,5,6,7,8,9,10))
 layer_number = np.loadtxt(directory+'layers.info', dtype=int, skiprows=1, usecols=(0,))
@@ -32,8 +33,7 @@ layer_header = ['body number', 'density', 'alpha', 'thermal conductivity', 'heat
 
 layer = dict()
 for i in xrange(0, 10):
-    data = 1e3*np.loadtxt(directory+'layers_xy/layer{}.xyz'.format(i))
-    data[:,2] *= -1
+    data = np.loadtxt(directory+'layers_xy/layer{}.xyz'.format(i))
     layer[i] = data
 
 
@@ -44,11 +44,12 @@ nx, ny = Xcoords.size, Ycoords.size
 
 
 
-minX, minY, minZ = data[:,:3].min(axis=0)
-maxX, maxY, maxZ = data[:,:3].max(axis=0)
+minX, minY, minZ = data.min(axis=0)
+maxX, maxY, maxZ = data.max(axis=0)
 
-minZ = -400e3
-maxZ = 6000.0
+# minZ = -400e3
+minZ = -130e3
+maxZ = 600.0
 
 if comm.rank == 0:
     print("min/max:\n x {}\n y {}\n z {}".format((minX, maxX),
@@ -62,13 +63,13 @@ for i in xrange(10):
     data = layer[i]
     xl = data[:,0]
     yl = data[:,1]
-    zl = data[:,2].reshape(nx,ny)
-    spl[i] = RectBivariateSpline(Xcoords, Ycoords, zl)
+    zl = data[:,2].reshape(ny,nx)
+    spl[i] = RectBivariateSpline(Ycoords, Xcoords, zl)
 
 
 ## Setup the hexahedral mesh
 
-Nx, Ny, Nz = 51, 51, 204
+Nx, Ny, Nz = 200, 200, 500
 
 mesh = conduction.Conduction3D((minX, minY, minZ), (maxX, maxY, maxZ), (Nx, Ny, Nz))
 
@@ -108,7 +109,7 @@ def query_nearest(l):
     """
     layer_mask.fill(0)
     
-    zq = spl[l].ev(xq, yq)
+    zq = spl[l].ev(yq, xq)
     d, idx = tree.query(np.column_stack([xq, yq, zq]))
     layer_mask[idx] = True
     
@@ -127,6 +128,10 @@ for l in xrange(0,10):
         print("mapped layer {}".format(l))
 
 
+# This makes it the same as xyz files
+# layer_voxel = np.rot90(layer_voxel, axes=(1,2))
+# layer_voxel = layer_voxel[:,::-1,:]
+
 
 # Now map properties to these layers. Where these layers are not defined we have a default value assigned to them.
 
@@ -143,17 +148,68 @@ for i, l in enumerate(layer_number):
     if comm.rank == 0:
         print('{} {} \t k = {}, H = {}'.format(l, name, ki, Hi))
     
+
 k = k.ravel()
 H = H.ravel()
-
 
 # Update properties
 mesh.update_properties(k, H)
 
-# Boundary conditions
-mesh.boundary_condition('maxZ', 298.0, flux=False)
-mesh.boundary_condition('minZ', 1500., flux=False)
 
+# Boundary conditions
+topBC = 298.0
+bottomBC = 1300.0
+
+mesh.boundary_condition('maxZ', topBC, flux=False)
+mesh.boundary_condition('minZ', bottomBC, flux=False)
+
+
+# Make the top and bottom BC conform to geometry
+layer0 = layer_voxel == 0
+layer9 = layer_voxel == 9
+
+layer0 = layer0.ravel()
+layer9 = layer9.ravel()
+
+# mesh.dirichlet_mask[layer0] = True
+mesh.dirichlet_mask[layer9] = True
+
+mesh.construct_matrix()
+mesh.construct_rhs()
+
+layer0_gidx = mesh.lgmap.apply(np.nonzero(layer0)[0].astype(np.int32))
+layer9_gidx = mesh.lgmap.apply(np.nonzero(layer9)[0].astype(np.int32))
+
+mesh.rhs.assemblyBegin()
+# mesh.rhs.setValues(layer0_gidx, np.ones(layer0_gidx.size)*topBC)
+mesh.rhs.setValues(layer9_gidx, np.ones(layer9_gidx.size)*bottomBC)
+mesh.rhs.assemblyEnd()
+
+
+
+def solve(self, solver='bcgs'):
+    """
+    Construct the matrix A and vector b in Ax = b
+    and solve for x
+
+    GMRES method is default
+    """
+    matrix = self.mat
+    rhs = self.rhs
+    res = self.res
+    lres = self.lres
+
+    ksp = PETSc.KSP().create(comm=comm)
+    ksp.setType(solver)
+    ksp.setOperators(matrix)
+    # pc = ksp.getPC()
+    # pc.setType('gamg')
+    ksp.setFromOptions()
+    ksp.setTolerances(1e-10, 1e-50)
+    ksp.solve(rhs, res)
+    # We should hand this back to local vectors
+    self.dm.globalToLocal(res, lres)
+    return lres.array
 
 
 def hofmeister1999(k0, T, a, c):
@@ -162,6 +218,7 @@ def hofmeister1999(k0, T, a, c):
 def nonlinear_conductivity(self, k0, tolerance, k_fn, *args):
     k = k0.copy()
     self.update_properties(k, self.heat_sources)
+    self.construct_matrix()
 
     error = np.array(10.0)
     i = 0
@@ -170,8 +227,9 @@ def nonlinear_conductivity(self, k0, tolerance, k_fn, *args):
     while (error > tolerance):
         k_last = self.diffusivity.copy()
         self.update_properties(k, self.heat_sources)
+        self.construct_matrix()
 
-        T = self.solve()
+        T = solve(self)
         k = k_fn(*args)
 
         err = np.absolute(k - k_last).max()
@@ -185,7 +243,7 @@ def nonlinear_conductivity(self, k0, tolerance, k_fn, *args):
 
 if not nonlinear:
     t = clock()
-    sol = mesh.solve('bcgs')
+    sol = solve(mesh)
     if comm.rank == 0:
         print("linear solve time {} s".format(clock() -t))
 
@@ -199,13 +257,23 @@ else:
     c = 1e-10
     k0 = mesh.diffusivity.copy()
 
-    nonlinear_conductivity(mesh, k0, 1e-8, hofmeister1999, k0, mesh.temperature, a, c)
+    nonlinear_conductivity(mesh, k0, 1e-5, hofmeister1999, k0, mesh.temperature, a, c)
 
     H5_file = 'geological_model_nonlinear.h5'
 
 
+# Calculate heat flow
+dTdx, dTdy, dTdz = mesh.gradient(mesh.temperature)
+heatflux = -mesh.diffusivity*(dTdz).ravel()
+
+
 # Save to H5 file
 mesh.save_mesh_to_hdf5(H5_file)
-mesh.save_field_to_hdf5(H5_file, ID=layer_voxel.ravel(), k=mesh.diffusivity, H=mesh.heat_sources, T=mesh.temperature)
+mesh.save_field_to_hdf5(H5_file,\
+                        layer_ID=layer_voxel.ravel(),\
+                        conductivity=mesh.diffusivity,\
+                        heat_production=mesh.heat_sources,\
+                        temperature=mesh.temperature,\
+                        heat_flux=heatflux)
 if comm.rank == 0:
     conduction.generateXdmf(H5_file)
