@@ -248,6 +248,8 @@ class Conduction3D(object):
         cols = self.cols
         vals = self.vals
 
+        # self.w = np.zeros((7,n,3))
+
         dirichlet_mask = self.dirichlet_mask
 
         u = self.diffusivity.reshape(nz,ny,nx)
@@ -268,10 +270,21 @@ class Conduction3D(object):
             cols[i] = index[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2].ravel()
 
             distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
-            distance[distance==0] = 1e12 # protect against dividing by zero
+            distance[distance==0] = 1e-12 # protect against dividing by zero
             delta = 1.0/(2.0*distance**2)
 
             vals[i] = delta*(k[ds:nz+de+2,rs:ny+re+2,cs:nx+ce+2] + u).ravel()
+
+            # self.w[i] = self.coords[cols[i]] - self.coords
+
+        # self.w[self.w==-1] = 0.0
+        # w_mean = self.w.mean(axis=0)
+        # dist = np.linalg.norm(w_mean, axis=1)
+        # vals[-1] = dist
+
+        # dist = np.linalg.norm(w_mean - self.coords, axis=1)
+        # dist = np.linalg.norm(w - self.coords, axis=1)
+        # print dist.min(), dist.mean(), dist.max()
 
 
         # Dirichlet boundary conditions (duplicates are summed)
@@ -385,7 +398,11 @@ class Conduction3D(object):
         Ycoords = self.Ycoords
         Zcoords = self.Zcoords
 
-        Vx, Vy, Vz = np.gradient(vector, Xcoords, Ycoords, Zcoords)
+        nx, ny, nz = self.nx, self.ny, self.nz
+
+        # print nx, ny, nz, Xcoords.size, Ycoords.size, Zcoords.size, vector.reshape(nz,ny,nx).shape
+
+        Vz, Vy, Vx = np.gradient(vector.reshape(nz,ny,nx), Zcoords, Ycoords, Xcoords)
         return Vx, Vy, Vz
 
 
