@@ -5,7 +5,7 @@
 # 
 # Assemble the geological model from xyz data for each surface.
 
-nonlinear = True
+nonlinear = False
 
 
 import numpy as np
@@ -43,13 +43,13 @@ Ycoords = np.unique(data[:,1])
 nx, ny = Xcoords.size, Ycoords.size
 
 
-
-minX, minY, minZ = data.min(axis=0)
-maxX, maxY, maxZ = data.max(axis=0)
-
-# minZ = -400e3
 minZ = -130e3
 maxZ = 600.0
+
+### REFINE GRANITES
+minX, minY = 475e3, 775e3
+maxX, maxY = 650e3, 960e3
+
 
 if comm.rank == 0:
     print("min/max:\n x {}\n y {}\n z {}".format((minX, maxX),
@@ -69,7 +69,7 @@ for i in xrange(10):
 
 ## Setup the hexahedral mesh
 
-Nx, Ny, Nz = 220, 220, 410
+Nx, Ny, Nz = 50, 50, 200
 
 mesh = conduction.Conduction3D((minX, minY, minZ), (maxX, maxY, maxZ), (Nx, Ny, Nz))
 
@@ -247,7 +247,7 @@ if not nonlinear:
     if comm.rank == 0:
         print("linear solve time {} s".format(clock() -t))
 
-    H5_file = 'geological_model.h5'
+    H5_file = 'geological_model_granites.h5'
 
 
 else:
@@ -259,7 +259,7 @@ else:
 
     nonlinear_conductivity(mesh, k0, 1e-5, hofmeister1999, k0, mesh.temperature, a, c)
 
-    H5_file = 'geological_model_nonlinear.h5'
+    H5_file = 'geological_model_granites_nonlinear.h5'
 
 
 # Calculate heat flow
