@@ -406,6 +406,14 @@ class Conduction3D(object):
         return Vx, Vy, Vz
 
 
+    def heatflux(self):
+
+        T = self.temperature
+        k = self.diffusivity * -1
+        dTdx, dTdy, dTdz = self.gradient(T)
+        return k*dTdx.ravel(), k*dTdy.ravel(), k*dTdz.ravel()
+
+
     def save_mesh_to_hdf5(self, filename):
 
         import h5py
@@ -481,6 +489,52 @@ class Conduction3D(object):
             ViewHDF5.destroy()
 
         vec.destroy()
+
+
+    def save_vector_to_hdf5(self, filename, *args, **kwargs):
+        """
+        Saves vector on the mesh to an HDF5 file
+         e.g. heat flux field.
+
+        Pass these as arguments or keyword arguments for
+        their names to be saved to the hdf5 file
+
+        Each argument with x,y,z direction tuple
+         e.g. Q=(Qx, Qy, Qz)
+        """
+        import os.path
+
+        filename = str(filename)
+        if not filename.endswith('.h5'):
+            filename += '.h5'
+
+        kwdict = kwargs
+        for i, arg in enumerate(args):
+            key = "arr_{}".format(i)
+            if key in kwdict.keys():
+                raise ValueError("Cannot use un-named variables\
+                                  and keyword: {}".format(key))
+            kwdict[key] = arg
+
+
+        # This is a flattened 3xn global vector
+        gvec = self.dm.getCoordinates().duplicate()
+
+        for key in kwdict:
+            vx, vy, vz = kwdict[key]
+            val = np.column_stack([vx, vy, vz]).ravel()
+
+            gvec.assemblyBegin()
+            gvec.setValuesLocal(np.arange(val.size, dtype=PETSc.IntType), val)
+            gvec.assemblyEnd()
+            gvec.setName(key)
+
+            ViewHDF5 = PETSc.Viewer()
+            ViewHDF5.createHDF5(filename, mode='a')
+            ViewHDF5.view(obj=gvec)
+            ViewHDF5.destroy()
+
+        gvec.destroy()
 
 
 def csr_tocoo(indptr, indices, data):

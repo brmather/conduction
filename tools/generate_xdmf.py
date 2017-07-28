@@ -35,10 +35,10 @@ def generateXdmf(HDF5_filename):
         </DataItem>\n\
       </Geometry>\n'''.format(dim, shape, origin, stride))
 
-    def write_attribute(f, attributeName, dshape, dpath):
-        f.write('''      <Attribute Name="{0}" AttributeType="Scalar" Center="Node">'\n\
-        <DataItem Dimensions="{1}" NumberType="Float" Precision="4" Format="HDF">{2}</DataItem>\n\
-      </Attribute>\n'''.format(attributeName, dshape, dpath))
+    def write_attribute(f, attributeName, arrtype, dshape, dpath):
+        f.write('''      <Attribute Name="{0}" AttributeType="{1}" Center="Node">'\n\
+        <DataItem Dimensions="{2}" NumberType="Float" Precision="4" Format="HDF">{3}</DataItem>\n\
+      </Attribute>\n'''.format(attributeName, arrtype, dshape, dpath))
 
     def array_to_string(array):
         s = ""
@@ -55,6 +55,10 @@ def generateXdmf(HDF5_filename):
     minCoords = topo.attrs['minCoord']
     maxCoords = topo.attrs['maxCoord']
     shape = topo.attrs['shape']
+
+    nodes = 1
+    for n in shape:
+        nodes *= n
 
     stride = (maxCoords - minCoords)/shape
 
@@ -77,7 +81,18 @@ def generateXdmf(HDF5_filename):
             dname = dset.name[1:]
             dshape = array_to_string(dset.shape)
 
-            write_attribute(f, dname, dshape, dpath)
+            dnodes = 1
+            for n in dset.shape:
+                dnodes *= n
+
+            if dnodes%nodes != 0:
+                raise ValueError("Dataset {} is not a valid shape".format(dname))
+            elif dnodes/nodes > 1:
+                arrtype = "Vector"
+            elif dnodes/nodes == 1:
+                arrtype = "Scalar"
+
+            write_attribute(f, dname, arrtype, dshape, dpath)
 
     write_footer(f)
     f.close()
