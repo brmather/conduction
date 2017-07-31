@@ -1,6 +1,6 @@
 
-from .solver import Conduction3D
+from .solver import *
 from .interpolation import RegularGridInterpolator
-from .refinement import RefineGrids
+# from .refinement import RefineGrids
 from .tools import generateXdmf
 from .inversion import Inversion
