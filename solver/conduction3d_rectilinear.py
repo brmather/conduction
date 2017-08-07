@@ -392,7 +392,7 @@ class Conduction3D(object):
         return self.lvec.array.copy()
 
 
-    def gradient(self, vector):
+    def gradient(self, vector, **kwargs):
 
         Xcoords = self.Xcoords
         Ycoords = self.Ycoords
@@ -402,7 +402,7 @@ class Conduction3D(object):
 
         # print nx, ny, nz, Xcoords.size, Ycoords.size, Zcoords.size, vector.reshape(nz,ny,nx).shape
 
-        Vz, Vy, Vx = np.gradient(vector.reshape(nz,ny,nx), Zcoords, Ycoords, Xcoords)
+        Vz, Vy, Vx = np.gradient(vector.reshape(nz,ny,nx), Zcoords, Ycoords, Xcoords, **kwargs)
         return Vx, Vy, Vz
 
 

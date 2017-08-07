@@ -379,14 +379,14 @@ class Conduction2D(object):
         return self.lvec.array.copy()
 
 
-    def gradient(self, vector):
+    def gradient(self, vector, **kwargs):
 
         Xcoords = self.Xcoords
         Ycoords = self.Ycoords
         nx, ny = self.nx, self.ny
 
-        Vy, Vx = np.gradient(vector.reshape(ny,nx), Ycoords, Xcoords)
-        return Vx, Vy, Vz
+        Vy, Vx = np.gradient(vector.reshape(ny,nx), Ycoords, Xcoords, **kwargs)
+        return Vx, Vy
 
 
     def heatflux(self):
