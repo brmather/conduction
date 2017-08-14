@@ -1,4 +1,5 @@
 
 from conduction3d_rectilinear import Conduction3D
 from conduction2d_rectilinear import Conduction2D
+from conductionNd import ConductionND
 from diffusion2d import Diffusion2D
