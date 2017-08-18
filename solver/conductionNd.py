@@ -7,6 +7,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 from ..tools import sum_duplicates
+from ..mesh import MeshVariable
 
 class ConductionND(object):
     """
@@ -82,9 +83,9 @@ class ConductionND(object):
         self._initialise_COO_vectors()
 
         # thermal properties
-        self.diffusivity  = None
-        self.heat_sources = None
-        self.temperature = self.lres.array
+        self.diffusivity  = MeshVariable('diffusivity', dm)
+        self.heat_sources = MeshVariable('heat_sources', dm)
+        self.temperature = MeshVariable('temperature', dm)
 
 
     def _initialise_COO_vectors(self):
@@ -154,7 +155,7 @@ class ConductionND(object):
         self.dirichlet_mask = np.zeros(self.nn, dtype=bool)
 
 
-    def _initialise_matrix(self):
+    def _initialise_matrix(self, nnz=None):
         """
         There should be no mallocs but we turn off the error just to be sure.
         If there is it will be from users adjusting the BCs.
@@ -162,11 +163,14 @@ class ConductionND(object):
         Could push zeros into the matrix to allocate all potential entries
         but that would lengthen the build stage.
         """
+        if nnz is None:
+            nnz = (self.stencil_width, self.dim*2)
+
         mat = PETSc.Mat().create(comm=comm)
         mat.setType('aij')
         mat.setSizes(self.sizes)
         mat.setLGMap(self.lgmap)
-        mat.setPreallocationNNZ((self.stencil_width, self.dim*2))
+        mat.setPreallocationNNZ(nnz)
         mat.setOption(PETSc.Mat.Option.NEW_NONZERO_ALLOCATION_ERR, 0)
         mat.setFromOptions()
         
@@ -207,14 +211,18 @@ class ConductionND(object):
         self.mat = self._initialise_matrix()
 
 
+    def create_meshVariable(self, name):
+        return MeshVariable(name, self.dm)
+
+
     def update_properties(self, diffusivity, heat_sources):
         """
         Update diffusivity and heat sources
         """
 
 
-        self.diffusivity = self.sync(diffusivity)
-        self.heat_sources = self.sync(heat_sources)
+        self.diffusivity[:] = diffusivity
+        self.heat_sources[:] = heat_sources
 
 
     def boundary_condition(self, wall, val, flux=True):
@@ -276,7 +284,7 @@ class ConductionND(object):
 
         dirichlet_mask = self.dirichlet_mask
 
-        u = self.diffusivity.reshape(n)
+        u = self.diffusivity[:].reshape(n)
 
         k = np.zeros(n + 2)
         k[self.interior_slice] = u
@@ -361,7 +369,7 @@ class ConductionND(object):
         else:
             rhs = self.gvec.duplicate()
         
-        vec = -1.0*self.heat_sources.copy()
+        vec = -1.0*self.heat_sources[:]
 
         for wall in self.bc:
             val  = self.bc[wall]['val']
@@ -387,8 +395,7 @@ class ConductionND(object):
         """
         matrix = self.construct_matrix()
         rhs = self.construct_rhs()
-        res = self.res
-        lres = self.lres
+        res = self.temperature
 
         ksp = PETSc.KSP().create(comm=comm)
         ksp.setType(solver)
@@ -397,10 +404,9 @@ class ConductionND(object):
         # pc.setType('gamg')
         ksp.setFromOptions()
         ksp.setTolerances(1e-10, 1e-50)
-        ksp.solve(rhs, res)
+        ksp.solve(rhs, res._gdata)
         # We should hand this back to local vectors
-        self.dm.globalToLocal(res, lres)
-        return lres.array
+        return res[:]
 
 
     def sync(self, vector):

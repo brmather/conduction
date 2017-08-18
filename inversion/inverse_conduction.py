@@ -14,19 +14,33 @@ class Inversion(object):
         self.lithology = np.array(lithology).ravel()
         self.lithology_index = np.unique(lithology)
         self.lithology_index.sort()
+        self.lithology_mask = np.zeros((len(self.lithology_index), mesh.nn), dtype=bool)
+
+        for i, index in enumerate(self.lithology_index):
+            self.lithology_mask[i] = self.lithology == index
+
 
         minX, minY, minZ = mesh.coords.min(axis=0)
         maxX, maxY, maxZ = mesh.coords.max(axis=0)
 
-        nx, ny, nz = mesh.nx, mesh.ny, mesh.nz
 
-        Xcoords = np.linspace(minX, maxX, nx)
-        Ycoords = np.linspace(minY, maxY, ny)
-        Zcoords = np.linspace(minZ, maxZ, nz)
+        Xcoords = np.unique(mesh.coords[:,0])
+        Ycoords = np.unique(mesh.coords[:,1])
+        Zcoords = np.unique(mesh.coords[:,2])
+
+        nx, ny, nz = Xcoords.size, Ycoords.size, Zcoords.size
+
+        self.dx = (maxX - minX)/nx
+        self.dy = (maxY - minY)/ny
+        self.dz = (maxZ - minZ)/nz
+
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
 
 
         self.interp = RegularGridInterpolator((Zcoords, Ycoords, Xcoords),
-                                               np.zeros((mesh.nz, mesh.ny, mesh.nx)),
+                                               np.zeros((nz, ny, nx)),
                                                bounds_error=False, fill_value=np.nan)
 
 
@@ -48,18 +62,17 @@ class Inversion(object):
 
         # Initialise linear solver
         self.ksp = PETSc.KSP().create(comm)
-        self.ksp.setType('gmres')
+        self.ksp.setType('bcgs')
         self.ksp.setOperators(self.mesh.mat)
         # self.ksp.setComputeOperators(self.mesh.mat)
         # self.ksp.setDMActive(True)
         # self.ksp.setDM(self.mesh.dm)
-        self.ksp.setTolerances(1e-12, 1e-12)
+        self.ksp.setTolerances(1e-10, 1e-50)
         self.ksp.setFromOptions()
 
 
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
-
 
     
     def add_prior(self, **kwargs):
@@ -86,7 +99,7 @@ class Inversion(object):
         Similar to add_prior() but interpolates onto the mesh
         """
         fill_value = self.interp.fill_value
-        nx, ny, nz = self.mesh.nx, self.mesh.ny, self.mesh.nz
+        nx, ny, nz = self.nx, self.ny, self.nz
 
         for arg in kwargs:
             o = list(kwargs[arg])
@@ -129,14 +142,15 @@ class Inversion(object):
         tuple(vec1, vec2, vecN) --> tuple(field1, field2, fieldN)
         """
 
-        n = len(args)
+        n  = len(args)
+        nl = len(self.lithology_index)
 
         # preallocate memory
         mesh_variables = np.zeros((n, self.lithology.size))
 
         # unpack vector to field
-        for i, index in enumerate(self.lithology_index):
-            idx = self.lithology == index
+        for i in range(0, nl):
+            idx = self.lithology_mask[i]
             for f in range(n):
                 mesh_variables[f,idx] = args[f][i]
 
@@ -151,12 +165,13 @@ class Inversion(object):
         Map mesh variables back to the list
         """
         
-        n = len(args)
+        n  = len(args)
+        nl = len(self.lithology_index)
 
         lith_variables = np.zeros((n, self.lithology_index.size))
 
-        for i, index in enumerate(self.lithology_index):
-            idx = self.lithololgy == index
+        for i in range(0, nl):
+            idx = self.lithololgy_mask[i]
             for f in range(n):
                 lith_variables[f,i] += args[f][idx].sum()
 
@@ -167,6 +182,56 @@ class Inversion(object):
         return lith_variables
 
 
+    def linear_solve(self, mat=None, rhs=None):
+
+        if mat == None:
+            mat = self.mesh.construct_matrix()
+        if rhs == None:
+            rhs = self.mesh.construct_rhs()
+
+        gvec = self.mesh.gvec
+        lvec = self.mesh.lvec
+
+        self.ksp.setOperators(mat)
+        self.ksp.solve(rhs, gvec)
+        self.mesh.dm.globalToLocal(gvec, lvec)
+        return lvec.array.copy()
+
+    def linear_solve_ad(self, dT_ad, mat=None, rhs=None):
+
+        if mat == None:
+            mat = self.mesh.construct_matrix(in_place=False)
+        if rhs == None:
+            rhs = self.mesh.construct_rhs(in_place=False)
+
+        gvec = self.mesh.gvec
+        lvec = self.mesh.lvec
+
+        # adjoint b vec
+        matT = self.mesh._initialise_matrix()
+        mat.transpose(matT)
+        self.ksp.setOperators(matT)
+        self.ksp.solve()
+
+        # adjoint A mat
+        dk_ad = lvec.duplicate()
+
+        for l, lith in enumerate(self.lithology_index):
+            idx = self.lithololgy == lith
+            idx_n = np.logical_and(idx, dT_ad != 0.0)
+            if idx_n.any():
+                self.mesh.diffusivity = self.mesh.sync(idx)
+                dAdkl = self.mesh.construct_matrix(in_place=False)
+                dAdkl.mult(self.temperature, dAdklT)
+                self.ksp.solve(dAdklT, gvec)
+                self.dm.globalToLocal(gvec, lvec)
+                dk_ad[idx] += dT_ad.dot(lvec.array)/idx_n.sum()
+
+
+
+
+
+
     def forward_model(self, x):
         """
         x : inversion variables vector
@@ -175,8 +240,8 @@ class Inversion(object):
         k and H are compulsory (should they be specified in the first part of x?)
         
         """
-        dx, dy, dz = self.mesh.dx, self.mesh.dy, self.mesh.dz
-        nx, ny, nz = self.mesh.nx, self.mesh.ny, self.mesh.nz
+        dx, dy, dz = self.dx, self.dy, self.dz
+        nx, ny, nz = self.nx, self.ny, self.nz
         (minX, maxX), (minY, maxY), (minZ, maxZ) = self.mesh.dm.getLocalBoundingBox()
         minBounds = (minX, minY, minZ)
         maxBounds = (maxX, maxY, maxY)
@@ -200,6 +265,7 @@ class Inversion(object):
 
             self.mesh.diffusivity = k
             A = self.mesh.construct_matrix()
+            self.ksp.setOperators(A)
             self.ksp.solve(b, self.temperature)
             self.mesh.dm.globalToLocal(self.temperature, self.mesh.lvec)
             T = self.mesh.lvec.array.copy()
@@ -210,8 +276,8 @@ class Inversion(object):
             comm.Allgather([error_local, MPI.BOOL], [error_global, MPI.BOOL])
             i += 1
 
-        idx_lowerBC = self.mesh.bc['bottom']['mask']
-        idx_upperBC = self.mesh.bc['top']['mask']
+        idx_lowerBC = self.mesh.bc['minZ']['mask']
+        idx_upperBC = self.mesh.bc['maxZ']['mask']
 
         # print gradT[nz//2,0,:]
         # print T.reshape(nz,ny,nx)[nz//2, -1, :]
@@ -268,8 +334,8 @@ class Inversion(object):
 
 
     def tangent_linear(self, x, dx):
-        hx, hy, hz = self.mesh.dx, self.mesh.dy, self.mesh.dz
-        nx, ny, nz = self.mesh.nx, self.mesh.ny, self.mesh.nz
+        hx, hy, hz = self.dx, self.dy, self.dz
+        nx, ny, nz = self.nx, self.ny, self.nz
 
         k_list, H_list, a_list = np.array_split(x.array[:-1], 3)
         q0 = x.array[-1]
@@ -292,16 +358,16 @@ class Inversion(object):
             k_last = k.copy()
 
             self.mesh.update_properties(k, H)
-            self.mesh.boundary_condition('top', 298.0, flux=False)
-            self.mesh.boundary_condition('bottom', q0, flux=True)
+            self.mesh.boundary_condition('maxZ', 298.0, flux=False)
+            self.mesh.boundary_condition('minZ', q0, flux=True)
             A = self.mesh.construct_matrix()
             b = self.mesh.construct_rhs()
 
             self.ksp.solve(b, self.temperature)
 
             self.mesh.update_properties(dk, dH)
-            self.mesh.boundary_condition('top', 0.0, flux=False)
-            self.mesh.boundary_condition('bottom', dq0, flux=True)
+            self.mesh.boundary_condition('maxZ', 0.0, flux=False)
+            self.mesh.boundary_condition('minZ', dq0, flux=True)
             dA = self.mesh.construct_matrix(in_place=False, derivative=True)
             db = self.mesh.construct_rhs(in_place=False)
             
@@ -423,8 +489,8 @@ class Inversion(object):
 
 
     def adjoint(self, tao, x, G):
-        dx, dy, dz = self.mesh.dx, self.mesh.dy, self.mesh.dz
-        nx, ny, nz = self.mesh.nx, self.mesh.ny, self.mesh.nz
+        dx, dy, dz = self.dx, self.dy, self.dz
+        nx, ny, nz = self.nx, self.ny, self.nz
         (minX, maxX), (minY, maxY), (minZ, maxZ) = self.mesh.dm.getLocalBoundingBox()
 
         k_list, H_list, a_list = np.array_split(x.array[:-1], 3)
@@ -433,8 +499,8 @@ class Inversion(object):
         # Unpack vectors onto mesh
         k0, H, a = self.map(k_list, H_list, a_list)
         self.mesh.update_properties(k0, H)
-        self.mesh.boundary_condition('top', 298.0, flux=False)
-        self.mesh.boundary_condition('bottom', q0, flux=True)
+        self.mesh.boundary_condition('maxZ', 298.0, flux=False)
+        self.mesh.boundary_condition('minZ', q0, flux=True)
         b = self.mesh.construct_rhs()
 
         k = [k0]
@@ -557,8 +623,8 @@ class Inversion(object):
         idx_local = np.array([True])
         idx_global = np.ones(comm.size, dtype=bool)
 
-        idx_lowerBC = self.mesh.bc['bottom']['mask']
-        idx_upperBC = self.mesh.bc['top']['mask']
+        idx_lowerBC = self.mesh.bc['minZ']['mask']
+        idx_upperBC = self.mesh.bc['maxZ']['mask']
 
 
         kspT = PETSc.KSP().create(comm)
@@ -585,13 +651,13 @@ class Inversion(object):
 
 
             self.mesh.diffusivity = k[-1-j]
-            self.mesh.boundary_condition('top', 298.0, flux=False)
-            self.mesh.boundary_condition('bottom', q0, flux=True)
+            self.mesh.boundary_condition('maxZ', 298.0, flux=False)
+            self.mesh.boundary_condition('minZ', q0, flux=True)
             A = self.mesh.construct_matrix()
 
 
-            AT = A.copy()
-            AT.transpose()
+            AT = self.mesh._initialise_matrix()
+            A.transpose(AT)
             self.mesh.lvec.setArray(dT_ad)
             self.mesh.dm.localToGlobal(self.mesh.lvec, b)
 
@@ -607,7 +673,7 @@ class Inversion(object):
             A.scale(-1.0)
 
 
-            # self.mesh.boundary_condition('top', 0.0, flux=False)
+            # self.mesh.boundary_condition('maxZ', 0.0, flux=False)
             # self.mesh.diffusivity.fill(1.0)
             # dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
 
@@ -629,7 +695,7 @@ class Inversion(object):
                 idx_local[0] = idx_n.any()
                 comm.Allgather([idx_local, MPI.BOOL], [idx_global, MPI.BOOL])
                 if idx_global.any():
-                    self.mesh.boundary_condition('top', 0.0, flux=False)
+                    self.mesh.boundary_condition('maxZ', 0.0, flux=False)
                     self.mesh.diffusivity.fill(0.0)
                     self.mesh.diffusivity[idx] = 1.0
                     dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
