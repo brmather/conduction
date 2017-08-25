@@ -7,6 +7,8 @@ from mpi4py import MPI
 from petsc4py import PETSc
 comm = MPI.COMM_WORLD
 
+from ..mesh import MeshVariable
+
 class Inversion(object):
 
     def __init__(self, lithology, mesh):
@@ -39,9 +41,9 @@ class Inversion(object):
         self.nz = nz
 
 
-        self.interp = RegularGridInterpolator((Zcoords, Ycoords, Xcoords),
-                                               np.zeros((nz, ny, nx)),
-                                               bounds_error=False, fill_value=np.nan)
+        self.interp = RegularGridInterpolator(mesh.grid_coords[::-1],
+                                              np.zeros(mesh.n),
+                                              bounds_error=False, fill_value=np.nan)
 
 
         mesh.lvec.set(1.0)
@@ -142,20 +144,20 @@ class Inversion(object):
         tuple(vec1, vec2, vecN) --> tuple(field1, field2, fieldN)
         """
 
-        n  = len(args)
+        nf = len(args)
         nl = len(self.lithology_index)
 
         # preallocate memory
-        mesh_variables = np.zeros((n, self.lithology.size))
+        mesh_variables = np.zeros((nf, self.lithology.size))
 
         # unpack vector to field
         for i in range(0, nl):
             idx = self.lithology_mask[i]
-            for f in range(n):
+            for f in range(nf):
                 mesh_variables[f,idx] = args[f][i]
 
-        mesh_variables = np.vsplit(mesh_variables, n)
-        for f in range(n):
+        mesh_variables = np.vsplit(mesh_variables, nf)
+        for f in range(nf):
             mesh_variables[f] = mesh_variables[f][0] # flatten array
 
         return mesh_variables
@@ -165,42 +167,43 @@ class Inversion(object):
         Map mesh variables back to the list
         """
         
-        n  = len(args)
+        nf = len(args)
         nl = len(self.lithology_index)
 
-        lith_variables = np.zeros((n, self.lithology_index.size))
+        lith_variables = np.zeros((nf, self.lithology_index.size))
 
         for i in range(0, nl):
-            idx = self.lithololgy_mask[i]
-            for f in range(n):
+            idx = self.lithology_mask[i]
+            for f in range(nf):
                 lith_variables[f,i] += args[f][idx].sum()
 
-        lith_variables = np.vsplit(lith_variables, n)
-        for f in range(n):
+        lith_variables = np.vsplit(lith_variables, nf)
+        for f in range(nf):
             lith_variables[f] = lith_variables[f][0]
 
         return lith_variables
 
 
-    def linear_solve(self, mat=None, rhs=None):
+    def linear_solve(self, matrix=None, rhs=None):
 
-        if mat == None:
-            mat = self.mesh.construct_matrix()
+        if matrix == None:
+            matrix = self.mesh.construct_matrix()
         if rhs == None:
             rhs = self.mesh.construct_rhs()
 
         gvec = self.mesh.gvec
         lvec = self.mesh.lvec
 
-        self.ksp.setOperators(mat)
-        self.ksp.solve(rhs, gvec)
-        self.mesh.dm.globalToLocal(gvec, lvec)
-        return lvec.array.copy()
+        res = self.temperature
 
-    def linear_solve_ad(self, dT_ad, mat=None, rhs=None):
+        self.ksp.setOperators(matrix)
+        self.ksp.solve(rhs_gdata, res._gdata)
+        return res[:].copy()
 
-        if mat == None:
-            mat = self.mesh.construct_matrix(in_place=False)
+    def linear_solve_ad(self, T, dT, matrix=None, rhs=None):
+
+        if matrix == None:
+            matrix = self.mesh.construct_matrix(in_place=False)
         if rhs == None:
             rhs = self.mesh.construct_rhs(in_place=False)
 
@@ -209,27 +212,30 @@ class Inversion(object):
 
         # adjoint b vec
         matT = self.mesh._initialise_matrix()
-        mat.transpose(matT)
+        matrix.transpose(matT)
         self.ksp.setOperators(matT)
-        self.ksp.solve()
 
         # adjoint A mat
         dk_ad = lvec.duplicate()
+        solve_lith = np.array(True)
 
-        for l, lith in enumerate(self.lithology_index):
-            idx = self.lithololgy == lith
+        dT_ad = dT[:]
+
+        nl = len(self.lithology_index)
+        for i in range(0, nl):
+            idx = self.lithology_mask[i]
             idx_n = np.logical_and(idx, dT_ad != 0.0)
-            if idx_n.any():
-                self.mesh.diffusivity = self.mesh.sync(idx)
-                dAdkl = self.mesh.construct_matrix(in_place=False)
-                dAdkl.mult(self.temperature, dAdklT)
+            ng = idx_n.any()
+            comm.Allreduce([ng, MPI.BOOL], [solve_lith, MPI.BOOL], op=MPI.LOR)
+            if solve_lith:
+                self.mesh.diffusivity[:] = idx
+                dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
+                dAdklT = dAdkl * T._gdata
                 self.ksp.solve(dAdklT, gvec)
                 self.dm.globalToLocal(gvec, lvec)
                 dk_ad[idx] += dT_ad.dot(lvec.array)/idx_n.sum()
 
-
-
-
+        return dk_ad
 
 
     def forward_model(self, x):

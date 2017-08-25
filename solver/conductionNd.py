@@ -32,9 +32,6 @@ class ConductionND(object):
         self.dm = dm
         self.lvec = dm.createLocalVector()
         self.gvec = dm.createGlobalVector()
-        self.rhs = dm.createGlobalVector()
-        self.res = dm.createGlobalVector()
-        self.lres = dm.createLocalVector()
         self.lgmap = dm.getLGMap()
 
         # Setup matrix sizes
@@ -85,7 +82,10 @@ class ConductionND(object):
         # thermal properties
         self.diffusivity  = MeshVariable('diffusivity', dm)
         self.heat_sources = MeshVariable('heat_sources', dm)
-        self.temperature = MeshVariable('temperature', dm)
+        self.temperature  = MeshVariable('temperature', dm)
+
+        # right hand side vector
+        self.rhs = MeshVariable('rhs', dm)
 
 
     def _initialise_COO_vectors(self):
@@ -122,7 +122,11 @@ class ConductionND(object):
         # local coordinates
         self.coords = self.dm.getCoordinatesLocal().array.reshape(-1, dim)
 
-        self.grid_coords = np.unique(self.coords[::-1], axis=0)
+        grid_coords = [None]*dim
+        for i in range(0, dim):
+            grid_coords[i] = np.unique(self.coords[:,i])
+
+        self.grid_coords = grid_coords
 
 
     def _initialise_boundary_dictionary(self):
@@ -367,7 +371,7 @@ class ConductionND(object):
         if in_place:
             rhs = self.rhs
         else:
-            rhs = self.gvec.duplicate()
+            rhs = MeshVariable('rhs', self.dm)
         
         vec = -1.0*self.heat_sources[:]
 
@@ -380,21 +384,21 @@ class ConductionND(object):
             else:
                 vec[mask] = val
 
-        self.lvec.setArray(vec)
-        self.dm.localToGlobal(self.lvec, rhs)
-
+        rhs[:] = vec
         return rhs
 
 
-    def solve(self, solver='bcgs'):
+    def solve(self, matrix=None, rhs=None, solver='bcgs'):
         """
         Construct the matrix A and vector b in Ax = b
         and solve for x
 
         GMRES method is default
         """
-        matrix = self.construct_matrix()
-        rhs = self.construct_rhs()
+        if matrix is None:
+            matrix = self.construct_matrix()
+        if rhs is None:
+            rhs = self.construct_rhs()
         res = self.temperature
 
         ksp = PETSc.KSP().create(comm=comm)
@@ -404,7 +408,7 @@ class ConductionND(object):
         # pc.setType('gamg')
         ksp.setFromOptions()
         ksp.setTolerances(1e-10, 1e-50)
-        ksp.solve(rhs, res._gdata)
+        ksp.solve(rhs._gdata, res._gdata)
         # We should hand this back to local vectors
         return res[:]
 
@@ -418,7 +422,7 @@ class ConductionND(object):
 
     def gradient(self, vector, **kwargs):
 
-        return np.gradient(vector.reshape(self.n), *self.grid_coords, **kwargs)
+        return np.gradient(vector.reshape(self.n), *self.grid_coords[::-1], **kwargs)
 
 
     def heatflux(self):
