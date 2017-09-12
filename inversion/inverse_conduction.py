@@ -72,6 +72,15 @@ class Inversion(object):
         self.ksp.setTolerances(1e-10, 1e-50)
         self.ksp.setFromOptions()
 
+        # Initialise linear solver
+        self.ksp_T = PETSc.KSP().create(comm)
+        self.ksp_T.setType('bcgs')
+        # self.ksp_T.setComputeOperators(self.mesh.mat)
+        # self.ksp_T.setDMActive(True)
+        # self.ksp_T.setDM(self.mesh.dm)
+        self.ksp_T.setTolerances(1e-10, 1e-50)
+        self.ksp_T.setFromOptions()
+
 
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
@@ -112,7 +121,7 @@ class Inversion(object):
             else:
                 xi = o[2]
                 self.interp.fill_value = -1.
-                self.interp.values = self.ghost_weights.reshape(nz,ny,nx)
+                self.interp.values = self.ghost_weights.reshape(self.mesh.n)
                 w = self.interp(xi)
                 ghost_weight = 1.0/np.floor(w+1e-12) # eliminate round-off error
                 ghost_weight[ghost_weight==-1.] = 0.0
@@ -123,6 +132,40 @@ class Inversion(object):
         self.interp.fill_value = fill_value
 
 
+    def add_observation_new(self, **kwargs):
+
+        interp = self.interp
+        interp.values = self.ghost_weights.reshape(self.mesh.n)
+
+        for arg in kwargs:
+            obs = InvObservation(interp, *kwargs[arg])
+            self.observation[arg] = obs
+
+    def add_prior_new(self, **kwargs):
+
+        for arg in kwargs:
+            prior = InvPrior(*kwargs[arg])
+            self.prior[arg] = prior
+
+
+    def interpolate(field, xi):
+        self.interp.values = field.reshape(self.mesh.n)
+        return self.interp(xi)
+
+
+    def cost(self, x, inv_obj):
+        x[np.isnan(x)] = 0.0
+        c = (x - inv_obj.v)**2/inv_obj.dv**2
+        c *= inv_obj.gweight
+        return c.sum()
+
+    def cost_ad(self, x, inv_obj):
+        x[np.isnan(x)] = 0.0
+        dc = (2.0*x - 2.0*inv_obj.v)/inv_obj.dv**2
+        dc *= inv_obj.gweight
+        return dc
+
+
     def objective_function(self, x, x0, sigma_x0, ghost_weight=1.0):
         x = np.ma.array(x, mask=np.isnan(x))
         C = (x - x0)**2/sigma_x0**2
@@ -130,9 +173,10 @@ class Inversion(object):
         return C.sum()
 
     def objective_function_ad(self, x, x0, sigma_x0, ghost_weight=1.0):
-        x = np.ma.array(x, mask=np.isnan(x))
+        x = np.array(x)
         C_ad = (2.0*x - 2.0*x0)/sigma_x0**2
         C_ad *= ghost_weight
+        x[np.isnan(x)] = 0.0
         return C_ad
 
 
@@ -156,11 +200,7 @@ class Inversion(object):
             for f in range(nf):
                 mesh_variables[f,idx] = args[f][i]
 
-        mesh_variables = np.vsplit(mesh_variables, nf)
-        for f in range(nf):
-            mesh_variables[f] = mesh_variables[f][0] # flatten array
-
-        return mesh_variables
+        return list(mesh_variables)
 
     def map_ad(self, *args):
         """
@@ -177,11 +217,7 @@ class Inversion(object):
             for f in range(nf):
                 lith_variables[f,i] += args[f][idx].sum()
 
-        lith_variables = np.vsplit(lith_variables, nf)
-        for f in range(nf):
-            lith_variables[f] = lith_variables[f][0]
-
-        return lith_variables
+        return list(lith_variables)
 
 
     def linear_solve(self, matrix=None, rhs=None):
@@ -194,10 +230,10 @@ class Inversion(object):
         gvec = self.mesh.gvec
         lvec = self.mesh.lvec
 
-        res = self.temperature
+        res = self.mesh.temperature
 
         self.ksp.setOperators(matrix)
-        self.ksp.solve(rhs_gdata, res._gdata)
+        self.ksp.solve(rhs._gdata, res._gdata)
         return res[:].copy()
 
     def linear_solve_ad(self, T, dT, matrix=None, rhs=None):
@@ -210,17 +246,27 @@ class Inversion(object):
         gvec = self.mesh.gvec
         lvec = self.mesh.lvec
 
+        res = self.mesh.temperature
+        res[:] = T
+
         # adjoint b vec
-        matT = self.mesh._initialise_matrix()
-        matrix.transpose(matT)
-        self.ksp.setOperators(matT)
+        db_ad = lvec.duplicate()
+
+        matrix_T = self.mesh._initialise_matrix()
+        matrix.transpose(matrix_T)
+        self.ksp_T.setOperators(matrix_T)
+        self.ksp_T.solve(rhs._gdata, gvec)
+        self.mesh.dm.globalToLocal(gvec, db_ad)
+
 
         # adjoint A mat
-        dk_ad = lvec.duplicate()
+        dk_ad = np.zeros_like(T)
         solve_lith = np.array(True)
 
+        matrix.scale(-1.0)
+        self.mesh.boundary_condition('maxZ', 0.0, flux=False)
         dT_ad = dT[:]
-
+        
         nl = len(self.lithology_index)
         for i in range(0, nl):
             idx = self.lithology_mask[i]
@@ -230,12 +276,47 @@ class Inversion(object):
             if solve_lith:
                 self.mesh.diffusivity[:] = idx
                 dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
-                dAdklT = dAdkl * T._gdata
+                dAdklT = dAdkl * res._gdata
                 self.ksp.solve(dAdklT, gvec)
-                self.dm.globalToLocal(gvec, lvec)
+                self.mesh.dm.globalToLocal(gvec, lvec)
                 dk_ad[idx] += dT_ad.dot(lvec.array)/idx_n.sum()
 
-        return dk_ad
+        return dk_ad, db_ad.array
+
+    def gradient(self, T):
+        gradT = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
+        return gradT
+
+    def gradient_ad(self, dT, gradT, T):
+        # gradT = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
+        for i in xrange(self.mesh.dim):
+            delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
+            dT += gradT[i]/(self.mesh.n[i]*delta)
+        return dT
+
+
+    def heatflux(self, T, k):
+        gradT = self.gradient(T)
+        kn = -k.reshape(self.mesh.n)
+        # self.mesh.create_meshVariable('heatflux')
+        q = kn*np.array(gradT)
+        return q.sum(axis=0)
+
+    def heatflux_ad(dq, q, T, k):
+        gradT = self.gradient(T)
+        kn = -k.reshape(self.mesh.n)
+
+        dqdk = np.array(gradT).sum(axis=0)
+        dk = dqdk*dq
+
+        dqdgradT = kn
+        dT = np.zeros_like(kn)
+        for i in range(0, self.mesh.dim):
+            delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
+            dqdT = kn/(self.mesh.n[i]*delta)
+            dT += dqdT*dq
+        
+        return dT, dk
 
 
     def forward_model(self, x):
@@ -269,10 +350,10 @@ class Inversion(object):
         while error_global.any():
             k_last = k.copy()
 
-            self.mesh.diffusivity = k
+            self.mesh.update_properties(k, H)
             A = self.mesh.construct_matrix()
             self.ksp.setOperators(A)
-            self.ksp.solve(b, self.temperature)
+            self.ksp.solve(b._gdata, self.temperature)
             self.mesh.dm.globalToLocal(self.temperature, self.mesh.lvec)
             T = self.mesh.lvec.array.copy()
 
@@ -297,12 +378,12 @@ class Inversion(object):
             obs = self.observation['q']
 
             # Compute heat flux
-            gradTz, gradTy, gradTx = np.gradient(T.reshape(nz,ny,nx), dz,dy,dx)
-            heatflux = k.reshape(nz,ny,nx)*(gradTz + gradTy + gradTx)
+            gradTz, gradTy, gradTx = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
+            heatflux = k.reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
             q_interp = heatflux.ravel()
             if obs[2] is not None:
                 self.interp.values = heatflux
-                q_interp = self.interp(obs[2])
+                q_interp = self.interp(obs[2], method='nearest')
 
             cost += self.objective_function(q_interp, obs[0], obs[1], obs[-1])
 
@@ -311,8 +392,8 @@ class Inversion(object):
             obs = self.observation['T']
             T_interp = T
             if obs[2] is not None:
-                self.interp.values = T.reshape(mesh.nz, mesh.ny, mesh.nx)
-                T_interp = self.interp(obs[2])
+                self.interp.values = T.reshape(self.mesh.n)
+                T_interp = self.interp(obs[2], method='nearest')
             # out_of_bounds = np.zeros(obs[2].shape[0], dtype=bool)
             # for i, xi in enumerate(obs[2]):
             #     out_of_bounds[i] += (xi < minBounds).any()
@@ -369,7 +450,7 @@ class Inversion(object):
             A = self.mesh.construct_matrix()
             b = self.mesh.construct_rhs()
 
-            self.ksp.solve(b, self.temperature)
+            self.ksp.solve(b._gdata, self.temperature)
 
             self.mesh.update_properties(dk, dH)
             self.mesh.boundary_condition('maxZ', 0.0, flux=False)
@@ -378,7 +459,7 @@ class Inversion(object):
             db = self.mesh.construct_rhs(in_place=False)
             
             # dT = A-1*db - A-1*dA*A-1*b
-            self.ksp.solve(db, self._temperature)
+            self.ksp.solve(db._gdata, self._temperature)
 
 
             A.scale(-1.0)
@@ -430,8 +511,8 @@ class Inversion(object):
             obs = self.observation['q']
 
             # Compute heat flux
-            gradTz, gradTy, gradTx = np.gradient(T.reshape(nz,ny,nx),hz,hy,hx)
-            heatflux = k.reshape(nz,ny,nx)*(gradTz + gradTy + gradTx)
+            gradTz, gradTy, gradTx = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
+            heatflux = k.reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
             q_interp = heatflux.ravel()
             
             if obs[2] is not None:
@@ -449,9 +530,9 @@ class Inversion(object):
             dq = dqdTz*dT + dqdTy*dT + dqdTx*dT + dqdk.ravel()*dk
             dq_interp = dq
             if obs[2] is not None:
-                self.interp.values = dq.reshape(nz,ny,nx)
+                self.interp.values = dq.reshape(self.mesh.n)
                 dq_interp = self.interp(obs[2], method='nearest')
-            print obs[-1], "\n", q_interp, "\n", dq_interp
+            # print obs[-1], "\n", q_interp, "\n", dq_interp
             dcdq = self.objective_function_ad(q_interp, obs[0], obs[1], obs[-1])
             dc += np.sum(dcdq*dq_interp)
 
@@ -460,14 +541,14 @@ class Inversion(object):
             obs = self.observation['T']
             T_interp = T
             if obs[2] is not None:
-                self.interp.values = T.reshape(nz,ny,nx)
-                T_interp = self.interp(obs[2])
+                self.interp.values = T.reshape(self.mesh.n)
+                T_interp = self.interp(obs[2], method='nearest')
             cost += self.objective_function(T_interp, obs[0], obs[1], obs[-1])
 
             dT_interp = dT
             if obs[2] is not None:
-                self.interp.values = dT.reshape(nz,ny,nx)
-                dT_interp = self.interp(obs[2])
+                self.interp.values = dT.reshape(self.mesh.n)
+                dT_interp = self.interp(obs[2], method='nearest')
             dcdT = self.objective_function_ad(T_interp, obs[0], obs[1], obs[-1])
             dc += np.sum(dcdT*dT_interp)
 
@@ -518,7 +599,7 @@ class Inversion(object):
         while error_global.any():
             self.mesh.diffusivity = k[i]
             A = self.mesh.construct_matrix()
-            self.ksp.solve(b, self.temperature)
+            self.ksp.solve(b._gdata, self.temperature)
             self.mesh.dm.globalToLocal(self.temperature, self.mesh.lvec)
 
             T.append(self.mesh.lvec.array.copy())
@@ -547,8 +628,8 @@ class Inversion(object):
             obs = self.observation['q']
 
             # Compute heat flux
-            gradTz, gradTy, gradTx = np.gradient(T[-1].reshape(nz,ny,nx), dz,dy,dx)
-            heatflux = k[-1].reshape(nz,ny,nx)*(gradTz + gradTy + gradTx)
+            gradTz, gradTy, gradTx = np.gradient(T[-1].reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
+            heatflux = k[-1].reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
             q_interp = heatflux.ravel()
             
             if obs[2] is not None:
@@ -569,7 +650,7 @@ class Inversion(object):
                 dq_ad = self.mesh.lvec.array.copy() #/self.ghost_weights
                 # print "dq_interp_ad", dq_ad_interp
                 print obs[-1]
-                print "dq_ad\n", dq_ad.min(), dq_ad.mean(), dq_ad.max()
+                # print "dq_ad\n", dq_ad.min(), dq_ad.mean(), dq_ad.max()
                 # print "dq_ad\n", np.hstack([dq_ad[dq_ad>0].reshape(-1,1), self.mesh.coords[dq_ad>0]])
                 # print "np.nan", np.where(dq_ad==np.nan)
 
@@ -586,8 +667,8 @@ class Inversion(object):
             obs = self.observation['T']
             T_interp = T[-1]
             if obs[2] is not None:
-                self.interp.values = T[-1].reshape(mesh.nz, mesh.ny, mesh.nx)
-                T_interp = self.interp(obs[2])
+                self.interp.values = T[-1].reshape(self.mesh.n)
+                T_interp = self.interp(obs[2], method='nearest')
             cost += self.objective_function(T_interp, obs[0], obs[1], obs[-1])
 
             ## AD ##
@@ -595,13 +676,13 @@ class Inversion(object):
             dT_ad2 = dcdT*1.0
             if obs[2] is not None:
                 dT_interp_ad = dcdT*1.0
-                dT_ad2 = self.interp.adjoint(obs[2], dq_interp_ad).ravel()
+                dT_ad2 = self.interp.adjoint(obs[2], dq_interp_ad, method='nearest').ravel()
             
             self.mesh.lvec.setArray(dT_ad2)
             self.mesh.dm.localToGlobal(self.mesh.lvec, self.mesh.gvec)
             self.mesh.dm.globalToLocal(self.mesh.gvec, self.mesh.lvec)
             dT_ad2 = self.mesh.lvec.array.copy()
-            print "dT_ad\n", dT_ad2.min(), dT_ad2.mean(), dT_ad2.max()
+            # print "dT_ad\n", dT_ad2.min(), dT_ad2.mean(), dT_ad2.max()
 
             dT_ad += dT_ad2
 
@@ -634,12 +715,12 @@ class Inversion(object):
 
 
         kspT = PETSc.KSP().create(comm)
-        kspT.setType('gmres')
+        kspT.setType('bcgs')
         kspT.setTolerances(1e-12, 1e-12)
         kspT.setFromOptions()
         # kspT.setDM(self.mesh.dm)
-        pc = kspT.getPC()
-        pc.setType('gamg')
+        # pc = kspT.getPC()
+        # pc.setType('gamg')
 
         dAdklT = self.mesh.gvec.duplicate()
 
@@ -665,10 +746,10 @@ class Inversion(object):
             AT = self.mesh._initialise_matrix()
             A.transpose(AT)
             self.mesh.lvec.setArray(dT_ad)
-            self.mesh.dm.localToGlobal(self.mesh.lvec, b)
+            self.mesh.dm.localToGlobal(self.mesh.lvec, b._gdata)
 
             kspT.setOperators(AT)
-            kspT.solve(b, self.mesh.gvec)
+            kspT.solve(b._gdata, self.mesh.gvec)
             self.mesh.dm.globalToLocal(self.mesh.gvec, self.mesh.lvec)
             db_ad = self.mesh.lvec.array
 
@@ -711,8 +792,9 @@ class Inversion(object):
                     dAdkl.mult(self._temperature, dAdklT)
                     self.ksp.solve(dAdklT, self.mesh.gvec)
                     self.mesh.dm.globalToLocal(self.mesh.gvec, self.mesh.lvec)
-                    dk_ad[idx_n] += dT_ad.dot(self.mesh.lvec.array)/idx_n.sum()
-                    # print self.mesh.lvec.array.mean(), dk_ad.mean(), dk0_ad.mean()
+                    if idx_local[0]:
+                        dk_ad[idx_n] += dT_ad.dot(self.mesh.lvec.array)/idx_n.sum()
+                    # print self.mesh.lvec.array.mean(), dk_ad.mean(), dk0_ad.mean(), idx_n.any(), idx_n.sum()
 
 
             dT_ad.fill(0.0)
