@@ -65,7 +65,7 @@ class ConductionND(object):
             closure = [(0,-2), (1,-1), (2,0), (1,-1), (1,-1)]
         elif dim == 3:
             closure = [(0,-2), (1,-1), (1,-1), (2,0), (1,-1), (1,-1), (1,-1)]
-        self.closure = closure
+        self.closure = self._create_closure_object(closure)
 
 
         # interior slices
@@ -181,7 +181,21 @@ class ConductionND(object):
         return mat
 
 
-    def refine(self, x_fn=None, y_fn=None, z_fn=None):
+    def _create_closure_object(self, closure):
+
+        n = self.n
+        obj = [[0] * self.dim for i in range(self.stencil_width)]
+
+        for i in range(0, self.stencil_width):
+            # construct slicing object
+            for j in range(0, self.dim):
+                start, end = closure[i-j]
+                obj[i][j] = slice(start, n[j]+end+2)
+
+        return obj
+
+
+    def refine(self, fn, axis):
         """
         Pass a function to apply to the x,y,z coordinates on the mesh.
         The domain will be redefined accordingly.
@@ -191,20 +205,13 @@ class ConductionND(object):
          We do it this way to make sure the domain is balanced across
          processors. Adding new nodes would imbalance the matrix.
         """
-        fn = lambda x: x
-        if x_fn is None: x_fn = fn
-        if y_fn is None: y_fn = fn
-        if z_fn is None: z_fn = fn
-
         v = self.dm.getCoordinatesLocal()
-        coords = v.array.reshape(-1,3)
+        coords = v.array.reshape(-1, self.dim)
 
-        coords[:,0] = x_fn(coords[:,0])
-        coords[:,1] = y_fn(coords[:,1])
-        coords[:,2] = z_fn(coords[:,2])
+        coords[:,axis] = fn(coords[:,axis])
 
         if not np.isfinite(coords).all():
-            raise ValueError('A function has created NaNs or Inf numbers')
+            raise ValueError('This function has created NaNs or Inf numbers')
 
         v.setArray(coords.ravel())
 
@@ -293,19 +300,8 @@ class ConductionND(object):
         k = np.zeros(n + 2)
         k[self.interior_slice] = u
 
-        closure = self.closure
-
-        obj = [None]*dim
-
         for i in range(0, self.stencil_width):
-            rs, re = closure[i]
-            cs, ce = closure[-1+i]
-            ds, de = closure[-2+i]
-
-            # construct slicing object
-            for j in range(0, dim):
-                start, end = closure[i-j]
-                obj[j] = slice(start, n[j]+end+2)
+            obj = self.closure[i]
 
             rows[i] = nodes
             cols[i] = index[obj].ravel()
@@ -427,10 +423,10 @@ class ConductionND(object):
 
     def heatflux(self):
 
-        T = self.temperature
-        k = self.diffusivity * -1
+        T = self.temperature[:]
+        k = self.diffusivity[:] * -1
         divT = self.gradient(T)
-        for i in self.dim:
+        for i in range(0, self.dim):
             div = k*divT[i].ravel()
             divT[i] = div
 

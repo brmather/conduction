@@ -14,8 +14,18 @@ class Inversion(object):
     def __init__(self, lithology, mesh):
         self.mesh = mesh
         self.lithology = np.array(lithology).ravel()
-        self.lithology_index = np.unique(lithology)
-        self.lithology_index.sort()
+
+        # communicate lithology index
+        lithology_index = np.unique(lithology)
+        lith_min, lith_max = np.array(lithology_index.min(), dtype=float), np.array(lithology_index.max(), dtype=float)
+        all_lith_min, all_lith_max = np.array(0.0), np.array(0.0)
+        comm.Allreduce([lith_min, MPI.DOUBLE], [all_lith_min, MPI.DOUBLE], op=MPI.MIN)
+        comm.Allreduce([lith_max, MPI.DOUBLE], [all_lith_max, MPI.DOUBLE], op=MPI.MAX)
+
+        # self.lithology_index = np.unique(lithology)
+        # self.lithology_index.sort()
+        self.lithology_index = np.arange(int(all_lith_min), int(all_lith_max)+1)
+
         self.lithology_mask = np.zeros((len(self.lithology_index), mesh.nn), dtype=bool)
 
         for i, index in enumerate(self.lithology_index):
@@ -176,7 +186,6 @@ class Inversion(object):
         x = np.array(x)
         C_ad = (2.0*x - 2.0*x0)/sigma_x0**2
         C_ad *= ghost_weight
-        x[np.isnan(x)] = 0.0
         return C_ad
 
 
@@ -379,7 +388,7 @@ class Inversion(object):
 
             # Compute heat flux
             gradTz, gradTy, gradTx = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
-            heatflux = k.reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
+            heatflux = -k.reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
             q_interp = heatflux.ravel()
             if obs[2] is not None:
                 self.interp.values = heatflux
@@ -512,7 +521,7 @@ class Inversion(object):
 
             # Compute heat flux
             gradTz, gradTy, gradTx = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
-            heatflux = k.reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
+            heatflux = -k.reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
             q_interp = heatflux.ravel()
             
             if obs[2] is not None:
@@ -521,10 +530,10 @@ class Inversion(object):
             cost += self.objective_function(q_interp, obs[0], obs[1], obs[-1])
 
             # dqdT = k
-            dqdTz = k/(nz*hz)
-            dqdTy = k/(ny*hy)
-            dqdTx = k/(nx*hx)
-            dqdk = gradTz + gradTy + gradTx
+            dqdTz = -k/(nz*hz)
+            dqdTy = -k/(ny*hy)
+            dqdTx = -k/(nx*hx)
+            dqdk = -(gradTz + gradTy + gradTx)
 
             # dq = dqdT*dT + dqdk.ravel()*dk
             dq = dqdTz*dT + dqdTy*dT + dqdTx*dT + dqdk.ravel()*dk
@@ -534,6 +543,7 @@ class Inversion(object):
                 dq_interp = self.interp(obs[2], method='nearest')
             # print obs[-1], "\n", q_interp, "\n", dq_interp
             dcdq = self.objective_function_ad(q_interp, obs[0], obs[1], obs[-1])
+            # print "tl", dcdq
             dc += np.sum(dcdq*dq_interp)
 
 
@@ -597,7 +607,7 @@ class Inversion(object):
         error_global = np.ones(comm.size, dtype=bool)
         i = 0
         while error_global.any():
-            self.mesh.diffusivity = k[i]
+            self.mesh.update_properties(k[i], H)
             A = self.mesh.construct_matrix()
             self.ksp.solve(b._gdata, self.temperature)
             self.mesh.dm.globalToLocal(self.temperature, self.mesh.lvec)
@@ -629,7 +639,7 @@ class Inversion(object):
 
             # Compute heat flux
             gradTz, gradTy, gradTx = np.gradient(T[-1].reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
-            heatflux = k[-1].reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
+            heatflux = -k[-1].reshape(self.mesh.n)*(gradTz + gradTy + gradTx)
             q_interp = heatflux.ravel()
             
             if obs[2] is not None:
@@ -644,20 +654,21 @@ class Inversion(object):
             if obs[2] is not None:
                 dq_interp_ad = dcdq*1.0
                 dq_ad = self.interp.adjoint(obs[2], dq_interp_ad, method='nearest').ravel()
+                # print "ad\n", dq_interp_ad
                 self.mesh.lvec.setArray(dq_ad)
                 self.mesh.dm.localToGlobal(self.mesh.lvec, self.mesh.gvec)
                 self.mesh.dm.globalToLocal(self.mesh.gvec, self.mesh.lvec)
                 dq_ad = self.mesh.lvec.array.copy() #/self.ghost_weights
                 # print "dq_interp_ad", dq_ad_interp
-                print obs[-1]
+                # print obs[-1]
                 # print "dq_ad\n", dq_ad.min(), dq_ad.mean(), dq_ad.max()
                 # print "dq_ad\n", np.hstack([dq_ad[dq_ad>0].reshape(-1,1), self.mesh.coords[dq_ad>0]])
                 # print "np.nan", np.where(dq_ad==np.nan)
 
-            dqdTz = k[-1]/(nz*dz)
-            dqdTy = k[-1]/(ny*dy)
-            dqdTx = k[-1]/(nx*dz)
-            dqdk = (gradTz + gradTy + gradTx).ravel()
+            dqdTz = -k[-1]/(nz*dz)
+            dqdTy = -k[-1]/(ny*dy)
+            dqdTx = -k[-1]/(nx*dz)
+            dqdk = -(gradTz + gradTy + gradTx).ravel()
 
             dk_ad += dqdk*dq_ad
             dT_ad += dqdTx*dq_ad + dqdTy*dq_ad + dqdTz*dq_ad
@@ -848,5 +859,5 @@ class Inversion(object):
 
 
         G.setArray(np.concatenate([sum_dk_list_ad, sum_dH_list_ad, sum_da_list_ad, [sum_dq0_ad]]))
-
+        
         return sum_cost
