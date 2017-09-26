@@ -748,7 +748,7 @@ class Inversion(object):
             dk_ad.fill(0.0)
 
 
-            self.mesh.diffusivity = k[-1-j]
+            self.mesh.update_properties(k[-1-j], H)
             self.mesh.boundary_condition('maxZ', 298.0, flux=False)
             self.mesh.boundary_condition('minZ', q0, flux=True)
             A = self.mesh.construct_matrix()
@@ -786,6 +786,8 @@ class Inversion(object):
             self.mesh.dm.localToGlobal(self.mesh.lvec, self._temperature)
 
 
+            kappa = np.zeros_like(H)
+
             for l, lith in enumerate(self.lithology_index):
                 idx = self.lithology == lith
                 idx_dT = dT_ad != 0.0
@@ -794,13 +796,15 @@ class Inversion(object):
                 comm.Allgather([idx_local, MPI.BOOL], [idx_global, MPI.BOOL])
                 if idx_global.any():
                     self.mesh.boundary_condition('maxZ', 0.0, flux=False)
-                    self.mesh.diffusivity.fill(0.0)
-                    self.mesh.diffusivity[idx] = 1.0
+                    kappa.fill(0.0)
+                    kappa[idx] = 1.0
+                    self.mesh.diffusivity[:] = kappa
                     dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
                     # diag = dAdkl.getDiagonal()
                     # diag.array[idx_upperBC] = 0.0
                     # dAdkl.setDiagonal(diag)
                     dAdkl.mult(self._temperature, dAdklT)
+                    self.ksp.setOperators(A)
                     self.ksp.solve(dAdklT, self.mesh.gvec)
                     self.mesh.dm.globalToLocal(self.mesh.gvec, self.mesh.lvec)
                     if idx_local[0]:
@@ -859,5 +863,7 @@ class Inversion(object):
 
 
         G.setArray(np.concatenate([sum_dk_list_ad, sum_dH_list_ad, sum_da_list_ad, [sum_dq0_ad]]))
+
+        print("cost = {}".format(sum_cost))
         
         return sum_cost
