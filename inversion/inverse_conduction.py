@@ -1,3 +1,21 @@
+"""
+Copyright 2017 Ben Mather
+
+This file is part of Conduction <https://git.dias.ie/itherc/conduction/>
+
+Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.
+
+Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 try: range = xrange
 except: pass
 
@@ -298,7 +316,7 @@ class Inversion(object):
 
     def gradient_ad(self, dT, gradT, T):
         # gradT = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
-        for i in xrange(self.mesh.dim):
+        for i in range(0, self.mesh.dim):
             delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
             dT += gradT[i]/(self.mesh.n[i]*delta)
         return dT
