@@ -421,7 +421,7 @@ class ConductionND(object):
         # pc = ksp.getPC()
         # pc.setType('gamg')
         ksp.setFromOptions()
-        ksp.setTolerances(1e-10, 1e-50)
+        ksp.setTolerances(1e-20, 1e-50)
         ksp.solve(rhs._gdata, res._gdata)
         # We should hand this back to local vectors
         return res[:]

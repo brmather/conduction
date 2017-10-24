@@ -21,6 +21,7 @@ except: pass
 
 import numpy as np
 from scipy import sparse
+from scipy.sparse import linalg
 
 class ConductionND(object):
     """
@@ -132,10 +133,10 @@ class ConductionND(object):
             grid_coords[i] = np.linspace(minI, maxI, size)
 
 
-        coord_arrays = np.meshgrid(*grid_coords)
+        coord_arrays = np.meshgrid(*grid_coords[::-1], indexing='ij')
         coords = np.empty((self.nn, dim))
         for i in range(0, dim):
-            coords[:,i] = coord_arrays[i].ravel()
+            coords[:,i] = coord_arrays[::-1][i].ravel()
 
         self.grid_coords = grid_coords
         self.coords = coords
@@ -336,7 +337,7 @@ class ConductionND(object):
             rhs = self.construct_rhs()
         res = self.temperature
 
-        T = sparse.linalg.spsolve(matrix, rhs)
+        T = linalg.spsolve(matrix, rhs)
         self.temperature = T
 
         return T
