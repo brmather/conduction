@@ -16,8 +16,5 @@ You should have received a copy of the GNU Lesser General Public License
 along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from conduction3d_rectilinear import Conduction3D
-from conduction2d_rectilinear import Conduction2D
 from conductionNd_serial import ConductionND as ConductionND_serial
 from conductionNd import ConductionND
-from diffusion2d import Diffusion2D

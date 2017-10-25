@@ -91,27 +91,26 @@ class Inversion(object):
 
 
         # Initialise linear solver
-        self.ksp = PETSc.KSP().create(comm)
-        self.ksp.setType('bcgs')
-        self.ksp.setOperators(self.mesh.mat)
-        # self.ksp.setComputeOperators(self.mesh.mat)
-        # self.ksp.setDMActive(True)
-        # self.ksp.setDM(self.mesh.dm)
-        self.ksp.setTolerances(1e-10, 1e-50)
-        self.ksp.setFromOptions()
-
-        # Initialise linear solver
-        self.ksp_T = PETSc.KSP().create(comm)
-        self.ksp_T.setType('bcgs')
-        # self.ksp_T.setComputeOperators(self.mesh.mat)
-        # self.ksp_T.setDMActive(True)
-        # self.ksp_T.setDM(self.mesh.dm)
-        self.ksp_T.setTolerances(1e-10, 1e-50)
-        self.ksp_T.setFromOptions()
-
+        self.ksp = self._initialise_ksp()
+        self.ksp_T = self._initialise_ksp() # <- need to pass transposed mat
 
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
+
+
+    def _initialise_ksp(self, matrix=None, solver='bcgs', atol=1e-10, rtol=1e-50):
+        """
+        Initialise linear solver object
+        """
+        if matrix is None:
+            matrix = self.mesh.mat
+
+        ksp = PETSc.KSP().create(self.comm)
+        ksp.setType('bcgs')
+        ksp.setOperators(matrix)
+        ksp.setTolerances(atol, rtol)
+        ksp.setFromOptions()
+        return ksp
 
     
     def add_prior(self, **kwargs):

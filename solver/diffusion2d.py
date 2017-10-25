@@ -35,9 +35,11 @@ class Diffusion2D(Conduction2D):
         T = self.temperature.reshape(ny, nx)
         H = self.heat_sources.reshape(ny, nx)
         k = self.diffusivity.reshape(ny, nx)
-        
+
         maxdx = self.maxdx
         maxdy = self.maxdy
+
+        dt = (0.5*maxdx**2*maxdy**2)/(k.max()*(maxdx**2 + maxdy**2))
         
         bckeys = self.bc.keys()
         
@@ -45,27 +47,23 @@ class Diffusion2D(Conduction2D):
         for i in xrange(0, nsteps):
             # Enforce Dirichlet BCs
             self._update_bcs(T, False, *bckeys)
-            
-            # Evaluate derivatives
-            d1x, d1y = self.gradient(T)
-            flux_x = k*d1x
-            flux_y = k*d1y
-            
-            # Enforce Neumann BCs
-            flux_x = self._update_bcs(flux_x, True, 'minX', 'maxX')
-            flux_y = self._update_bcs(flux_y, True, 'minY', 'maxY')
-            
-            # Second derivative
-            flux_xx, flux_xy = self.gradient(flux_x)
-            flux_yx, flux_yy = self.gradient(flux_y)
-            
-            d2 = flux_xx + flux_yy
-            
-            # Update timestep size
-            dt = 0.5*maxdx**2*maxdy**2/k.max()*(maxdx**2 + maxdy**2)
-            
-            T += dt*(d2 + H)
-            # sync
+
+            D_c = k[1:-1,1:-1]
+            D_e = 0.5*(k[1:-1,0:-2] + D_c)
+            D_w = 0.5*(k[1:-1,2:]   + D_c)
+            D_n = 0.5*(k[0:-2,1:-1] + D_c)
+            D_s = 0.5*(k[2:,1:-1]   + D_c)
+
+            U_c = T[1:-1,1:-1]
+            U_e = T[1:-1,0:-2]
+            U_w = T[1:-1,2:]  
+            U_n = T[0:-2,1:-1]
+            U_s = T[2:,1:-1]  
+
+            h_x = (D_e*(U_e - U_c)/maxdx - D_w*(U_c - U_w)/maxdx)/maxdx
+            h_y = (D_s*(U_s - U_c)/maxdy - D_n*(U_c - U_n)/maxdy)/maxdy
+
+            T[1:-1,1:-1] += dt*(h_x + h_y + H[1:-1,1:-1])
             ttime += dt
-            
+
         return T, ttime

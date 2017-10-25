@@ -22,13 +22,15 @@ class InvObservation(object):
     """
     Inversion Observation for use in an objective function
 
-    This requires an interpolation object with information on 
+    This requires an interpolation object with information on
+    ghost points
     """
 
-    def __init__(self, interp, obs, obs_err, obs_coords=None):
+    def __init__(self, label, obs, obs_err, obs_coords=None, interp=None):
         """
         Arguments
         ---------
+         label      : label to give observation
          obs        : observations
          obs_err    : observational uncertainty
          obs_coords : coordinates in Cartesian N-dimensional space
@@ -38,9 +40,11 @@ class InvObservation(object):
         self.dv = obs_err
         self.coords = obs_coords
 
+        self.label = str(label)
+
         self.interp = interp
 
-        self.gweight = self.ghost_weights
+        self.gweight = self.ghost_weights()
 
 
     def ghost_weights(self):
@@ -56,10 +60,21 @@ class InvObservation(object):
 
 
 class InvPrior(object):
+    """
+    Prior for use in an objective function
+    """
 
-    def __init__(self, prior, prior_err):
+    def __init__(self, label, prior, prior_err):
+        """
+        Arguments
+        ---------
+         label     : label to give prior
+         prior     : prior
+         prior_err : prior uncertainty
+        """
 
         self.v = prior
         self.dv = prior_err
         self.gweight = 1.0
 
+        self.label = str(label)

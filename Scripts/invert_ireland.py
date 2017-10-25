@@ -247,8 +247,8 @@ x_bounds.extend([bounds['a'],]*size)
 x_bounds.append(tuple(bounds['q0']))
 
 # air
-x_bounds[0] = (5.0, 5.0)
-x_bounds[size] = (0.0, 0.0)
+# x_bounds[0] = (5.0, 5.0)
+# x_bounds[size] = (0.0, 0.0)
 
 
 if comm.rank == 0:
