@@ -26,7 +26,7 @@ class InvObservation(object):
     ghost points
     """
 
-    def __init__(self, label, obs, obs_err, obs_coords=None, interp=None):
+    def __init__(self, obs, obs_err, obs_coords=None):
         """
         Arguments
         ---------
@@ -40,11 +40,7 @@ class InvObservation(object):
         self.dv = obs_err
         self.coords = obs_coords
 
-        self.label = str(label)
-
-        self.interp = interp
-
-        self.gweight = self.ghost_weights()
+        # self.gweight = self.ghost_weights()
 
 
     def ghost_weights(self):
@@ -64,7 +60,7 @@ class InvPrior(object):
     Prior for use in an objective function
     """
 
-    def __init__(self, label, prior, prior_err):
+    def __init__(self, prior, prior_err):
         """
         Arguments
         ---------
@@ -75,6 +71,6 @@ class InvPrior(object):
 
         self.v = prior
         self.dv = prior_err
-        self.gweight = 1.0
+        # self.gweight = 1.0
 
-        self.label = str(label)
+        # self.label = str(label)

@@ -20,5 +20,5 @@ from .tools import *
 from .solver import *
 from .interpolation import RegularGridInterpolator
 # from .refinement import RefineGrids
-from .inversion import Inversion
+from .inversion import Inversion, InversionND
 from .mesh import MeshVariable

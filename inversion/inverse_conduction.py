@@ -105,7 +105,7 @@ class Inversion(object):
         if matrix is None:
             matrix = self.mesh.mat
 
-        ksp = PETSc.KSP().create(self.comm)
+        ksp = PETSc.KSP().create(comm)
         ksp.setType('bcgs')
         ksp.setOperators(matrix)
         ksp.setTolerances(atol, rtol)
