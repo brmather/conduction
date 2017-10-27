@@ -81,7 +81,7 @@ class InversionND(object):
         self._temperature = self.mesh.gvec.duplicate()
 
 
-    def _initialise_ksp(self, matrix=None, solver='bcgs', atol=1e-10, rtol=1e-50):
+    def _initialise_ksp(self, matrix=None, solver='gmres', atol=1e-10, rtol=1e-50):
         """
         Initialise linear solver object
         """
@@ -89,11 +89,72 @@ class InversionND(object):
             matrix = self.mesh.mat
 
         ksp = PETSc.KSP().create(comm)
-        ksp.setType('bcgs')
+        ksp.setType(solver)
         ksp.setOperators(matrix)
         ksp.setTolerances(atol, rtol)
         ksp.setFromOptions()
         return ksp
+
+    def get_boundary_conditions(self):
+        """
+        Retrieve the boundary conditions so they can be restored.
+        This is only useful in the adjoint linear solve where we must assert
+        Dirichlet BCs (I think)
+
+        order is [minX, maxX, minY, maxY, minZ, maxZ]
+
+        Returns
+        -------
+         bc_vals : values at the boundary conditions
+         bc_flux : whether it is a Neumann boundary condition
+
+        """
+        dim = self.mesh.dim
+        bc_vals = np.empty(dim*2)
+        bc_flux = np.empty(dim*2, dtype=bool)
+
+        wall = [("minX", "maxX"), ("minY", "maxY"), ("minZ", "maxZ")]
+
+        for i in range(0, dim):
+            w0, w1 = wall[i]
+            i0, i1 = i*2, i*2+1
+
+            bc_vals[i0] = self.mesh.bc[w0]["val"]
+            bc_flux[i0] = self.mesh.bc[w0]["flux"]
+
+            bc_vals[i1] = self.mesh.bc[w1]["val"]
+            bc_flux[i1] = self.mesh.bc[w1]["flux"]
+
+        return bc_vals, bc_flux
+
+
+    def set_boundary_conditions(self, bc_vals, bc_flux):
+        """
+        Set the boundary conditions easily using two vectors
+        order is [minX, maxX, minY, maxY, minZ, maxZ]
+
+        Parameters
+        -------
+         bc_vals : values at the boundary conditions
+         bc_flux : whether it is a Neumann boundary condition
+
+        """
+        dim = self.mesh.dim
+        if len(bc_vals) != len(bc_flux) or len(bc_vals) != dim*2:
+            raise ValueError("Input vectors should be of size {}".format(dim*2))
+
+        wall = [("minX", "maxX"), ("minY", "maxY"), ("minZ", "maxZ")]
+
+        for i in range(0, dim):
+            w0, w1 = wall[i]
+            i0, i1 = i*2, i*2+1
+
+            self.mesh.bc[w0]["val"]  = bc_vals[i0]
+            self.mesh.bc[w0]["flux"] = bc_flux[i0]
+
+            self.mesh.bc[w1]["val"]  = bc_vals[i1]
+            self.mesh.bc[w1]["flux"] = bc_flux[i1]
+
 
     def add_observation(self, **kwargs):
         """
@@ -186,24 +247,26 @@ class InversionND(object):
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
 
+                print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
+
         return dcdv
 
 
 
 
 
-    def interpolate(self, field, xi):
+    def interpolate(self, field, xi, method="nearest"):
         self.interp.values = field.reshape(self.mesh.n)
-        return self.interp(xi, method="nearest")
+        return self.interp(xi, method=method)
 
-    def interpolate_ad(self, dxi, field, xi):
+    def interpolate_ad(self, dxi, field, xi, method="nearest"):
         self.interp.values = field.reshape(self.mesh.n)
-        return self.interp.adjoint(xi, dxi, method="nearest")
+        return self.interp.adjoint(xi, dxi, method=method).ravel()
 
 
 
     def objective_function(self, x, x0, sigma_x0):
-        return ((x - x0)**2/sigma_x0**2).sum()
+        return np.sum((x - x0)**2/sigma_x0**2)
 
     def objective_function_ad(self, x, x0, sigma_x0):
         return (2.0*x - 2.0*x0)/sigma_x0**2
@@ -267,10 +330,16 @@ class InversionND(object):
 
     def linear_solve_ad(self, T, dT, matrix=None, rhs=None):
         """
-        If dT=0, then there is no need for this routine
+        If dT  = 0, adjoint=False : no need for this routine
+        If dT != 0 and inside lithology, lith_size > 0
         """
+        adjoint = np.array(False)
+        lith_size = np.array(0.0)
+
         idxT = np.nonzero(dT != 0.0)[0]
-        if idxT.any():
+        nT = idxT.any()
+        comm.Allreduce([nT, MPI.BOOL], [adjoint, MPI.BOOL], op=MPI.LOR)
+        if adjoint:
             if matrix == None:
                 matrix = self.mesh.construct_matrix(in_place=False)
             if rhs == None:
@@ -294,10 +363,17 @@ class InversionND(object):
 
             # adjoint A mat
             dk_ad = np.zeros_like(T)
-            solve_lith = np.array(True)
 
             matrix.scale(-1.0)
-            self.mesh.boundary_condition('maxZ', 0.0, flux=False)
+            self.ksp.setOperators(matrix)
+            # bc_vals, bc_flux = self.get_boundary_conditions() # store BCs
+            # bcv = np.zeros_like(bc_vals)
+            # bcf = bc_flux.copy()
+            # bcf[np.logical_and(bc_vals!=0, bc_flux==True)] = False
+            # bcf = np.zeros_like(bc_flux)
+
+            # self.set_boundary_conditions(bcv, bcf)
+            self.mesh.boundary_condition('maxZ', 0.0, flux=False) # not ND!!
             dT_ad = dT[:]
             kappa = np.zeros_like(T)
             
@@ -306,10 +382,11 @@ class InversionND(object):
                 # find if there are nonzero dT that intersect a lithology
                 idxM  = self.lithology_mask[i]
                 idx_n = np.intersect1d(idxT, idxM)
-                ng = idx_n.any()
-                comm.Allreduce([ng, MPI.BOOL], [solve_lith, MPI.BOOL], op=MPI.LOR)
+                # cells = float(idx_n.size) - (self.ghost_weights[idx_n]>1).sum()
+                local_size = np.array(float(idx_n.size))#/self.ghost_weights[idx_n]) # ghost nodes
+                comm.Allreduce([local_size, MPI.DOUBLE], [lith_size, MPI.DOUBLE], op=MPI.SUM)
 
-                if solve_lith:
+                if lith_size > 0:
                     kappa.fill(0.0)
                     kappa[idxM] = 1.0
                     self.mesh.diffusivity[:] = kappa
@@ -317,8 +394,12 @@ class InversionND(object):
                     dAdklT = dAdkl * res._gdata
                     self.ksp.solve(dAdklT, gvec)
                     self.mesh.dm.globalToLocal(gvec, lvec)
-                    if ng:
-                        dk_ad[idx_n] += dT_ad.dot(lvec.array)/idx_n.sum()
+                    if local_size > 0:
+                        dk_ad[idx_n] += dT_ad.dot(lvec.array)/lith_size
+
+            # return BCs to original
+            # self.set_boundary_conditions(bc_vals, bc_flux)
+
             return dk_ad, db_ad.array
         else:
             return np.zeros_like(T), np.zeros_like(T)
@@ -341,22 +422,25 @@ class InversionND(object):
         kn = -k.reshape(self.mesh.n)
         # self.mesh.create_meshVariable('heatflux')
         q = kn*np.array(gradT)
-        return q.sum(axis=0)
+        return q.sum(axis=0).ravel()
 
     def heatflux_ad(self, dq, q, T, k):
+        dqn = dq
+        if np.shape(dq):
+            dqn = dq.reshape(self.mesh.n)
         gradT = self.gradient(T)
         kn = -k.reshape(self.mesh.n)
 
         # careful of the negative!
         dqdk = -np.array(gradT).sum(axis=0)
-        dk = dqdk*dq
+        dk = dqdk*dqn
 
         dqdgradT = kn
         dT = np.zeros_like(kn)
         for i in range(0, self.mesh.dim):
             delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
             dqdT = kn/(self.mesh.n[i]*delta)
-            dT += dqdT*dq
+            dT += dqdT*dqn
 
         return dT.ravel(), dk.ravel()
 
