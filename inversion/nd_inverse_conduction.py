@@ -27,6 +27,7 @@ comm = MPI.COMM_WORLD
 
 from ..mesh import MeshVariable
 from .objective_variables import InvPrior, InvObservation
+from .grad_ad import gradient_ad as ad_grad
 
 class InversionND(object):
 
@@ -44,28 +45,31 @@ class InversionND(object):
         comm.Allreduce([lith_max, MPI.INT], [all_lith_max, MPI.INT], op=MPI.MAX)
 
         self.lithology_index = np.arange(all_lith_min, all_lith_max+1)
-
-
         self.lithology_mask = list(range(len(self.lithology_index)))
 
         for i, index in enumerate(self.lithology_index):
             self.lithology_mask[i] = np.nonzero(self.lithology == index)[0]
 
 
+        # Custom linear / nearest-neighbour interpolator
         self.interp = RegularGridInterpolator(mesh.grid_coords[::-1],
                                               np.zeros(mesh.n),
                                               bounds_error=False, fill_value=np.nan)
 
-
+        # Get weights for ghost points
         mesh.lvec.set(1.0)
         mesh.gvec.set(0.0)
         mesh.dm.localToGlobal(mesh.lvec, mesh.gvec, addv=True)
         mesh.dm.globalToLocal(mesh.gvec, mesh.lvec)
         self.ghost_weights = np.rint(mesh.lvec.array)
 
-        # print comm.rank, mesh.lvec.getSizes(), mesh.gvec.getSizes()
-        # print comm.rank, "global", mesh.gvec.array
-        # print comm.rank, "local", mesh.lvec.array.reshape(mesh.nz, mesh.ny, mesh.nx)
+
+        # We assume uniform grid spacing for now
+        delta = []
+        for i in range(0, mesh.dim):
+            dx = np.diff(mesh.grid_coords[i])
+            delta.append(dx.mean())
+        self.grid_delta = delta
 
 
         # Cost function variables
@@ -75,8 +79,9 @@ class InversionND(object):
 
         # Initialise linear solver
         self.ksp = self._initialise_ksp()
-        self.ksp_T = self._initialise_ksp() # <- need to pass transposed mat
+        self.ksp_T = self._initialise_ksp() # <- need to pass transposed matrix
 
+        # these should be depreciated soon
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
 
@@ -248,6 +253,8 @@ class InversionND(object):
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
 
                 print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
+            else:
+                dcdv = np.zeros_like(val)
 
         return dcdv
 
@@ -366,14 +373,7 @@ class InversionND(object):
 
             matrix.scale(-1.0)
             self.ksp.setOperators(matrix)
-            # bc_vals, bc_flux = self.get_boundary_conditions() # store BCs
-            # bcv = np.zeros_like(bc_vals)
-            # bcf = bc_flux.copy()
-            # bcf[np.logical_and(bc_vals!=0, bc_flux==True)] = False
-            # bcf = np.zeros_like(bc_flux)
-
-            # self.set_boundary_conditions(bcv, bcf)
-            self.mesh.boundary_condition('maxZ', 0.0, flux=False) # not ND!!
+            # self.mesh.boundary_condition('maxZ', 0.0, flux=False) # not ND!!
             dT_ad = dT[:]
             kappa = np.zeros_like(T)
             
@@ -382,8 +382,8 @@ class InversionND(object):
                 # find if there are nonzero dT that intersect a lithology
                 idxM  = self.lithology_mask[i]
                 idx_n = np.intersect1d(idxT, idxM)
-                # cells = float(idx_n.size) - (self.ghost_weights[idx_n]>1).sum()
-                local_size = np.array(float(idx_n.size))#/self.ghost_weights[idx_n]) # ghost nodes
+                gnodes = self.ghost_weights[idx_n]
+                local_size = np.array(float(idx_n.size)) - np.sum(1.0 - 1.0/gnodes) # ghost nodes
                 comm.Allreduce([local_size, MPI.DOUBLE], [lith_size, MPI.DOUBLE], op=MPI.SUM)
 
                 if lith_size > 0:
@@ -405,42 +405,74 @@ class InversionND(object):
             return np.zeros_like(T), np.zeros_like(T)
 
 
-    def gradient(self, T):
-        gradT = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
-        return gradT
+    def gradient(self, f):
+        """
+        Calculate the derivatives of f in each dimension.
 
-    def gradient_ad(self, dT, gradT, T):
-        # gradT = np.gradient(T.reshape(self.mesh.n), *self.mesh.grid_coords[::-1])
-        for i in range(0, self.mesh.dim):
-            delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
-            dT += gradT[i]/(self.mesh.n[i]*delta)
-        return dT
+        Parameters
+        ----------
+         f  : ndarray shape(n,)
+
+        Returns
+        -------
+         grad_f : ndarray shape(3,n)
+
+        """
+        grad = np.gradient(f.reshape(self.mesh.n), *self.grid_delta[::-1])
+        return np.array(grad).reshape(self.mesh.dim, -1)
+
+    def gradient_ad(self, df, f):
+        inshape = [self.mesh.dim] + list(self.mesh.n)
+        grad_ad = ad_grad(df.reshape(inshape), *self.grid_delta[::-1])
+        return grad_ad.ravel()
 
 
     def heatflux(self, T, k):
-        gradT = self.gradient(T)
-        kn = -k.reshape(self.mesh.n)
-        # self.mesh.create_meshVariable('heatflux')
-        q = kn*np.array(gradT)
-        return q.sum(axis=0).ravel()
+        """
+        Calculate heat flux.
+
+        Arguments
+        ---------
+         T  : ndarray shape(n,) temperature
+         k  : ndarray shape(n,) conductivity
+
+        Returns
+        -------
+         q  : ndarray shape(3,n), heatflux vectors
+        """
+        return -k*self.gradient(T)
 
     def heatflux_ad(self, dq, q, T, k):
-        dqn = dq
-        if np.shape(dq):
-            dqn = dq.reshape(self.mesh.n)
-        gradT = self.gradient(T)
-        kn = -k.reshape(self.mesh.n)
 
-        # careful of the negative!
-        dqdk = -np.array(gradT).sum(axis=0)
-        dk = dqdk*dqn
+        dqddelT = -k
+        dqdk = -self.gradient(T)
 
-        dqdgradT = kn
-        dT = np.zeros_like(kn)
-        for i in range(0, self.mesh.dim):
-            delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
-            dqdT = kn/(self.mesh.n[i]*delta)
-            dT += dqdT*dqn
+        ddelT = dqddelT*dq
+        dk = dqdk*dq
 
-        return dT.ravel(), dk.ravel()
+        inshape = [self.mesh.dim] + list(self.mesh.n)
+        print ddelT.shape, inshape
+
+        dT = self.gradient_ad(ddelT, T)
+
+        return dT.ravel(), dk.sum(axis=0)
+
+        # dqn = dq
+        # if np.shape(dq):
+        #     dqn = dq.reshape(self.mesh.n)
+        # gradT = self.gradient(T)
+        # kn = -k.reshape(self.mesh.n)
+
+        # # careful of the negative!
+        # dqdk = -np.array(gradT).sum(axis=0)
+        # dk = dqdk*dqn
+
+        # dqdgradT = kn
+        # dT = np.zeros_like(kn)
+        # for i in range(0, self.mesh.dim):
+        #     delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
+        #     dqdT = kn/(self.mesh.n[i]*delta)
+        #     dT += dqdT*dqn
+
+        # return dT.ravel(), dk.ravel()
 
