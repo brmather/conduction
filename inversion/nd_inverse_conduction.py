@@ -20,14 +20,15 @@ try: range = xrange
 except: pass
 
 import numpy as np
-from ..interpolation import RegularGridInterpolator
+from ..interpolation import RegularGridInterpolator, KDTreeInterpolator
+from ..mesh import MeshVariable
+from .objective_variables import InvPrior, InvObservation
+from .grad_ad import gradient_ad as ad_grad
+
 from mpi4py import MPI
 from petsc4py import PETSc
 comm = MPI.COMM_WORLD
 
-from ..mesh import MeshVariable
-from .objective_variables import InvPrior, InvObservation
-from .grad_ad import gradient_ad as ad_grad
 
 class InversionND(object):
 
@@ -52,9 +53,12 @@ class InversionND(object):
 
 
         # Custom linear / nearest-neighbour interpolator
-        self.interp = RegularGridInterpolator(mesh.grid_coords[::-1],
-                                              np.zeros(mesh.n),
+        self.interp = RegularGridInterpolator(mesh.grid_coords[::-1],\
+                                              np.zeros(mesh.n),\
                                               bounds_error=False, fill_value=np.nan)
+
+        self.ndinterp = KDTreeInterpolator(mesh.coords, np.zeros(mesh.nn),\
+                                           bounds_error=False, fill_value=0.0)
 
         # Get weights for ghost points
         mesh.lvec.set(1.0)
@@ -86,7 +90,7 @@ class InversionND(object):
         self._temperature = self.mesh.gvec.duplicate()
 
 
-    def _initialise_ksp(self, matrix=None, solver='gmres', atol=1e-10, rtol=1e-50):
+    def _initialise_ksp(self, matrix=None, solver='bcgs', atol=1e-10, rtol=1e-50):
         """
         Initialise linear solver object
         """
@@ -177,11 +181,11 @@ class InversionND(object):
                 raise TypeError("Need to pass {} instead of {}".format(InvObservation,type(obs)))
 
             # add interpolation information to obs
-            w = interp(obs.coords)
+            w = interp(obs.coords[:,::-1])
             w = 1.0/np.floor(w + 1e-12)
             offproc = np.isnan(w)
             w[offproc] = 0.0 # these are weighted with zeros
-            obs.w = w
+            obs.w = w # careful with 2x ghost nodes+
 
             # store in dictionary
             self.observation[arg] = obs
@@ -251,8 +255,6 @@ class InversionND(object):
 
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
-
-                print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
             else:
                 dcdv = np.zeros_like(val)
 
@@ -263,12 +265,12 @@ class InversionND(object):
 
 
     def interpolate(self, field, xi, method="nearest"):
-        self.interp.values = field.reshape(self.mesh.n)
-        return self.interp(xi, method=method)
+        self.ndinterp.values = np.ravel(field) #.reshape(self.mesh.n)
+        return self.ndinterp(xi, method=method)
 
     def interpolate_ad(self, dxi, field, xi, method="nearest"):
-        self.interp.values = field.reshape(self.mesh.n)
-        return self.interp.adjoint(xi, dxi, method=method).ravel()
+        self.ndinterp.values = np.ravel(field) #.reshape(self.mesh.n)
+        return self.ndinterp.adjoint(xi, dxi, method=method) #.ravel()
 
 
 
@@ -451,28 +453,7 @@ class InversionND(object):
         dk = dqdk*dq
 
         inshape = [self.mesh.dim] + list(self.mesh.n)
-        print ddelT.shape, inshape
 
         dT = self.gradient_ad(ddelT, T)
 
         return dT.ravel(), dk.sum(axis=0)
-
-        # dqn = dq
-        # if np.shape(dq):
-        #     dqn = dq.reshape(self.mesh.n)
-        # gradT = self.gradient(T)
-        # kn = -k.reshape(self.mesh.n)
-
-        # # careful of the negative!
-        # dqdk = -np.array(gradT).sum(axis=0)
-        # dk = dqdk*dqn
-
-        # dqdgradT = kn
-        # dT = np.zeros_like(kn)
-        # for i in range(0, self.mesh.dim):
-        #     delta = np.mean(np.diff(self.mesh.grid_coords[::-1][i]))
-        #     dqdT = kn/(self.mesh.n[i]*delta)
-        #     dT += dqdT*dqn
-
-        # return dT.ravel(), dk.ravel()
-
