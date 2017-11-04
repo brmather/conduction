@@ -82,15 +82,15 @@ class InversionND(object):
 
 
         # Initialise linear solver
-        self.ksp = self._initialise_ksp()
-        self.ksp_T = self._initialise_ksp() # <- need to pass transposed matrix
+        self.ksp = self._initialise_ksp(solver='gmres')
+        self.ksp_T = self._initialise_ksp(solver='gmres') # <- need to pass transposed matrix
 
         # these should be depreciated soon
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
 
 
-    def _initialise_ksp(self, matrix=None, solver='bcgs', atol=1e-10, rtol=1e-50):
+    def _initialise_ksp(self, matrix=None, solver='gmres', atol=1e-10, rtol=1e-50):
         """
         Initialise linear solver object
         """
@@ -255,6 +255,7 @@ class InversionND(object):
 
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
+                print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
             else:
                 dcdv = np.zeros_like(val)
 
@@ -265,11 +266,11 @@ class InversionND(object):
 
 
     def interpolate(self, field, xi, method="nearest"):
-        self.ndinterp.values = np.ravel(field) #.reshape(self.mesh.n)
+        self.ndinterp.values = field #.reshape(self.mesh.n)
         return self.ndinterp(xi, method=method)
 
     def interpolate_ad(self, dxi, field, xi, method="nearest"):
-        self.ndinterp.values = np.ravel(field) #.reshape(self.mesh.n)
+        self.ndinterp.values = field #.reshape(self.mesh.n)
         return self.ndinterp.adjoint(xi, dxi, method=method) #.ravel()
 
 
