@@ -71,7 +71,7 @@ for i in xrange(10):
 
 Nx, Ny, Nz = 220, 220, 410
 
-mesh = conduction.Conduction3D((minX, minY, minZ), (maxX, maxY, maxZ), (Nx, Ny, Nz))
+mesh = conduction.ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (Nx, Ny, Nz))
 
 coords = mesh.coords
 
@@ -79,7 +79,7 @@ Xcoords = np.unique(coords[:,0])
 Ycoords = np.unique(coords[:,1])
 Zcoords = np.unique(coords[:,2])
 
-nx, ny, nz = mesh.nx, mesh.ny, mesh.nz
+nx, ny, nz = Xcoords.size, Ycoords.size, Zcoords.size
 
 
 
@@ -215,7 +215,7 @@ def solve(self, solver='bcgs'):
 def hofmeister1999(k0, T, a, c):
     return k0*(298.0/T)**a + c*T**3
 
-def nonlinear_conductivity(self, k0, tolerance, k_fn, *args):
+def nonlinear_conductivity(self, k0, tolerance):
     k = k0.copy()
     self.update_properties(k, self.heat_sources)
     self.construct_matrix()
@@ -225,12 +225,12 @@ def nonlinear_conductivity(self, k0, tolerance, k_fn, *args):
     t = clock()
 
     while (error > tolerance):
-        k_last = self.diffusivity.copy()
-        self.update_properties(k, self.heat_sources)
+        k_last = self.diffusivity[:].copy()
+        self.diffusivity[:] = k
         self.construct_matrix()
 
         T = solve(self)
-        k = k_fn(*args)
+        k = hofmeister1999(k0, T, a, c)
 
         err = np.absolute(k - k_last).max()
         comm.Allreduce([err, MPI.DOUBLE], [error, MPI.DOUBLE], op=MPI.MAX)
@@ -255,9 +255,9 @@ else:
 
     a = 0.33
     c = 1e-10
-    k0 = mesh.diffusivity.copy()
+    k0 = mesh.diffusivity[:].copy()
 
-    nonlinear_conductivity(mesh, k0, 1e-5, hofmeister1999, k0, mesh.temperature, a, c)
+    nonlinear_conductivity(mesh, k0, 1e-5)
 
     H5_file = 'geological_model_nonlinear.h5'
 
