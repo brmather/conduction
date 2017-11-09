@@ -83,7 +83,8 @@ class InversionND(object):
 
         # Initialise linear solver
         self.ksp = self._initialise_ksp(solver='gmres')
-        self.ksp_T = self._initialise_ksp(solver='gmres') # <- need to pass transposed matrix
+        self.ksp_ad  = self._initialise_ksp(solver='gmres')
+        self.ksp_adT = self._initialise_ksp(solver='gmres') # <- need to pass transposed matrix
 
         # these should be depreciated soon
         self.temperature = self.mesh.gvec.duplicate()
@@ -367,15 +368,15 @@ class InversionND(object):
 
             matrix_T = self.mesh._initialise_matrix()
             matrix.transpose(matrix_T)
-            self.ksp_T.setOperators(matrix_T)
-            self.ksp_T.solve(rhs._gdata, gvec)
+            self.ksp_adT.setOperators(matrix_T)
+            self.ksp_adT.solve(rhs._gdata, gvec)
             self.mesh.dm.globalToLocal(gvec, db_ad)
 
             # adjoint A mat
             dk_ad = np.zeros_like(T)
 
             matrix.scale(-1.0)
-            self.ksp.setOperators(matrix)
+            self.ksp_ad.setOperators(matrix)
             # self.mesh.boundary_condition('maxZ', 0.0, flux=False) # not ND!!
             dT_ad = dT[:]
             kappa = np.zeros_like(T)
@@ -395,7 +396,7 @@ class InversionND(object):
                     self.mesh.diffusivity[:] = kappa
                     dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
                     dAdklT = dAdkl * res._gdata
-                    self.ksp.solve(dAdklT, gvec)
+                    self.ksp_ad.solve(dAdklT, gvec)
                     self.mesh.dm.globalToLocal(gvec, lvec)
                     if local_size > 0:
                         dk_ad[idx_n] += dT_ad.dot(lvec.array)/lith_size
