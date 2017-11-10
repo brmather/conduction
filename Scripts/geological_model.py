@@ -20,6 +20,55 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 
+def solve(self, solver='bcgs'):
+    """
+    Construct the matrix A and vector b in Ax = b
+    and solve for x
+
+    GMRES method is default
+    """
+    matrix = self.mat
+    rhs = self.rhs
+    res = self.temperature
+
+    ksp = PETSc.KSP().create(comm=comm)
+    ksp.setType(solver)
+    ksp.setOperators(matrix)
+    # pc = ksp.getPC()
+    # pc.setType('gamg')
+    ksp.setFromOptions()
+    ksp.setTolerances(1e-10, 1e-50)
+    ksp.solve(rhs._gdata, res._gdata)
+    # We should hand this back to local vectors
+    return res[:]
+
+
+def hofmeister1999(k0, T, a, c):
+    return k0*(298.0/T)**a + c*T**3
+
+def nonlinear_conductivity(self, k0, tolerance):
+    k = k0.copy()
+    self.construct_matrix()
+
+    error = np.array(10.0)
+    i = 0
+    t = clock()
+
+    while (error > tolerance):
+        k_last = self.diffusivity[:].copy()
+        self.diffusivity[:] = k
+        self.construct_matrix()
+
+        T = solve(self)
+        k = hofmeister1999(k0, T, a, c)
+
+        err = np.absolute(k - k_last).max()
+        comm.Allreduce([err, MPI.DOUBLE], [error, MPI.DOUBLE], op=MPI.MAX)
+        i += 1
+
+        if comm.rank == 0:
+            print("{} iterations in {} seconds, residual = {}".format(i, clock()-t, error))
+
 
 directory = '/opt/ben/'
 
@@ -146,7 +195,7 @@ for i, l in enumerate(layer_number):
     k[mask] = ki
     H[mask] = Hi
     if comm.rank == 0:
-        print('{} {} \t k = {}, H = {}'.format(l, name, ki, Hi))
+        print('{} {:20} \t k = {}, H = {}'.format(l, name, ki, Hi))
     
 
 k = k.ravel()
@@ -165,80 +214,23 @@ mesh.boundary_condition('minZ', bottomBC, flux=False)
 
 
 # Make the top and bottom BC conform to geometry
-layer0 = layer_voxel == 0
-layer9 = layer_voxel > 8
+air_mask = (layer_voxel == 0).ravel()
+lab_mask = (layer_voxel > 8).ravel()
 
-layer0 = layer0.ravel()
-layer9 = layer9.ravel()
+air_idx = np.nonzero(air_mask)[0].astype(np.int32)
+lab_idx = np.nonzero(lab_mask)[0].astype(np.int32)
 
-# mesh.dirichlet_mask[layer0] = True
-mesh.dirichlet_mask[layer9] = True
 
-mesh.construct_matrix()
 mesh.construct_rhs()
+mesh.dirichlet_mask[air_idx] = True
+mesh.dirichlet_mask[lab_idx] = True
 
-layer0_gidx = mesh.lgmap.apply(np.nonzero(layer0)[0].astype(np.int32))
-layer9_gidx = mesh.lgmap.apply(np.nonzero(layer9)[0].astype(np.int32))
-
-mesh.rhs.assemblyBegin()
-# mesh.rhs.setValues(layer0_gidx, np.ones(layer0_gidx.size)*topBC)
-mesh.rhs.setValues(layer9_gidx, np.ones(layer9_gidx.size)*bottomBC)
-mesh.rhs.assemblyEnd()
+mesh.rhs[air_idx] = np.ones(air_idx.size)*topBC
+mesh.rhs[lab_idx] = np.ones(lab_idx.size)*bottomBC
 
 
-
-def solve(self, solver='bcgs'):
-    """
-    Construct the matrix A and vector b in Ax = b
-    and solve for x
-
-    GMRES method is default
-    """
-    matrix = self.mat
-    rhs = self.rhs
-    res = self.res
-    lres = self.lres
-
-    ksp = PETSc.KSP().create(comm=comm)
-    ksp.setType(solver)
-    ksp.setOperators(matrix)
-    # pc = ksp.getPC()
-    # pc.setType('gamg')
-    ksp.setFromOptions()
-    ksp.setTolerances(1e-10, 1e-50)
-    ksp.solve(rhs, res)
-    # We should hand this back to local vectors
-    self.dm.globalToLocal(res, lres)
-    return lres.array
-
-
-def hofmeister1999(k0, T, a, c):
-    return k0*(298.0/T)**a + c*T**3
-
-def nonlinear_conductivity(self, k0, tolerance):
-    k = k0.copy()
-    self.update_properties(k, self.heat_sources)
-    self.construct_matrix()
-
-    error = np.array(10.0)
-    i = 0
-    t = clock()
-
-    while (error > tolerance):
-        k_last = self.diffusivity[:].copy()
-        self.diffusivity[:] = k
-        self.construct_matrix()
-
-        T = solve(self)
-        k = hofmeister1999(k0, T, a, c)
-
-        err = np.absolute(k - k_last).max()
-        comm.Allreduce([err, MPI.DOUBLE], [error, MPI.DOUBLE], op=MPI.MAX)
-        i += 1
-
-        if comm.rank == 0:
-            print("{} iterations in {} seconds, residual = {}".format(i, clock()-t, error))
-
+# initial guess x0
+mesh.temperature[:] = mesh.rhs[:].copy()
 
 
 if not nonlinear:
@@ -270,9 +262,9 @@ qx, qy, qz = mesh.heatflux()
 mesh.save_mesh_to_hdf5(H5_file)
 mesh.save_field_to_hdf5(H5_file,\
                         layer_ID=layer_voxel.ravel(),\
-                        conductivity=mesh.diffusivity,\
-                        heat_production=mesh.heat_sources*1e6,\
-                        temperature=mesh.temperature-273.14,\
+                        conductivity=mesh.diffusivity[:],\
+                        heat_production=mesh.heat_sources[:]*1e6,\
+                        temperature=mesh.temperature[:]-273.14,\
                         heat_flux=(qx+qy+qz)*1e3)
 mesh.save_vector_to_hdf5(H5_file,\
                          heat_flux_vector=(qx*1e3,qy*1e3,qz*1e3),\
