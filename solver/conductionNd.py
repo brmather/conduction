@@ -266,8 +266,8 @@ class ConductionND(object):
         wall = str(wall)
 
         if wall in self.bc:
-            self.bc[wall]["val"]  = val
-            self.bc[wall]["flux"] = flux
+            self.bc[wall]["val"]  = float(val)
+            self.bc[wall]["flux"] = bool(flux)
             d = self.bc[wall]
 
             mask = d['mask']

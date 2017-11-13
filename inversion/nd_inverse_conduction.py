@@ -32,7 +32,7 @@ comm = MPI.COMM_WORLD
 
 class InversionND(object):
 
-    def __init__(self, lithology, mesh):
+    def __init__(self, lithology, mesh, **kwargs):
         self.mesh = mesh
         self.lithology = np.array(lithology).ravel()
 
@@ -82,26 +82,32 @@ class InversionND(object):
 
 
         # Initialise linear solver
-        self.ksp = self._initialise_ksp(solver='gmres')
-        self.ksp_ad  = self._initialise_ksp(solver='gmres')
-        self.ksp_adT = self._initialise_ksp(solver='gmres') # <- need to pass transposed matrix
+        self.ksp = self._initialise_ksp(**kwargs)
+        self.ksp_ad  = self._initialise_ksp(**kwargs)
+        self.ksp_adT = self._initialise_ksp(**kwargs) # <- need to pass transposed matrix
 
         # these should be depreciated soon
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
 
 
-    def _initialise_ksp(self, matrix=None, solver='gmres', atol=1e-10, rtol=1e-50):
+    def _initialise_ksp(self, matrix=None, atol=1e-10, rtol=1e-50, **kwargs):
         """
         Initialise linear solver object
         """
         if matrix is None:
             matrix = self.mesh.mat
 
+        solver = kwargs.pop('solver', 'gmres')
+        precon = kwargs.pop('pc', None)
+
         ksp = PETSc.KSP().create(comm)
         ksp.setType(solver)
         ksp.setOperators(matrix)
         ksp.setTolerances(atol, rtol)
+        if precon is not None:
+            pc = ksp.getPC()
+            pc.setType(precon)
         ksp.setFromOptions()
         return ksp
 
@@ -256,7 +262,7 @@ class InversionND(object):
 
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
-                print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
+                # print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
             else:
                 dcdv = np.zeros_like(val)
 
