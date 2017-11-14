@@ -465,3 +465,39 @@ class InversionND(object):
         dT = self.gradient_ad(ddelT, T)
 
         return dT.ravel(), dk.sum(axis=0)
+
+
+    def lookup_velocity(self, T=None, P=None):
+        """
+        Lookup velocity from VelocityTable object (vtable)
+
+        Parameters
+        ----------
+         T  : temperature (optional)
+           taken from active mesh variable if not given
+         P  : pressure (optional)
+           calculated from depth assuming a constant density of 2700 kg/m^3
+        
+        Returns
+        -------
+         table  : everything in the table for given nodes
+
+        """
+        if T is None:
+            T = self.mesh.temperature[:]
+        if P is None:
+            z = np.absolute(self.mesh.coords[:,-1])
+            P = z*2700.0*9.806
+
+        nl = len(self.lithology_index)
+        nf = self.vtable.ncol
+
+        # preallocate memory
+        V = np.zeros((nf, self.mesh.nn))
+
+        for i in range(0, nl):
+            idx = self.lithology_mask[i]
+            lith_idx = self.lithology_index[i]
+            V[:,idx] = self.vtable[lith_idx](T[idx], P[idx])
+
+        return V
