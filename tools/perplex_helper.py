@@ -16,17 +16,94 @@ You should have received a copy of the GNU Lesser General Public License
 along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class VelocityTable(object):
+import numpy as np
+from scipy.Interpolate import griddata
 
-    def __init__(self, coords):
+class PerplexTable(object):
+    """
+    Import tables produced by Perplex for fast lookup using a KDTree
+    Temperature and pressure are always constant and thus define our
+    'mesh', then we place fields on top of this.
+
+    Multiple mesh variables (fields) can be added for a specific
+    lithology index. All fields are returned when called.
+
+    Methods
+    -------
+     add_field  : add new field(s) for a given lithology index
+     __call__   : return field(s) at given T-P
+    
+    Arguments
+    ---------
+     T  : shape(n,) temperature
+     P  : shape(n,) pressure
+    """
+
+    def __init__(self, T, P):
         from scipy.spatial import cKDTree
+        coords = np.column_stack([T, P])
         self.tree = cKDTree(coords)
+        self.table = dict()
+        self.ncol = 0
 
-    def add_table(self, velocity_field, index):
+        self.T_range = np.unique(T)
+        self.P_range = np.unique(P)
 
-        self.vdict[index] = velocity_field
+    def add_field(self, field, index):
+        """
+        Add new field(s) to the mesh for a given lithology index
+        
+        Arguments
+        ---------
+         field  : (ncol, n) Vp, Vs, rho, etc.
+         index  : int
+        """
+        if index not in self.table:
+            self.ncol += 1
+        field = self.process_tables(field)
+        self.table[index] = field
 
-    def __call__(self, xi, index):
-
+    def __call__(self, T, P, index):
+        xi = np.column_stack([T,P])
         d, idx = self.tree.query(xi)
-        return self.vdict[index][idx]
+        return self.table[index][idx]
+
+
+    def process_tables(self, phi):
+        """
+        Interpolate over NaNs or zero values in grid
+
+        Arguments
+        ---------
+         phi   : input field(s)
+
+        Returns
+        -------
+         phi   : processed field(s)
+        """
+        grid_T, grid_P = np.meshgrid(self.T_range, self.P_range)
+        xi = self.tree.data
+
+        ncol = 1
+        if phi.ndim > 1:
+            ncol = phi.shape[1]
+
+        # convert to column vector (if not already)
+        phi = phi.reshape(-1, ncol)
+
+        for i in range(ncol):
+            # find all invalid points
+            mask = ~np.logical_or(phi[:,i]==0, np.isnan(phi[:,i]))
+
+            phi[:,i] = griddata(xi[mask], phi[:,i][mask], (grid_T, grid_P), method='cubic').ravel()
+
+            # Replace with neighbour if the edges have NaNs
+            mask = ~np.logical_or(phi[:,i]==0, np.isnan(phi[:,i]))
+            phi[:,i] = griddata(xi[mask], phi[:,i][mask], (grid_T, grid_P), method='nearest').ravel()
+
+        phi = phi.astype(np.float16)
+
+        if ncol == 1:
+            return phi.ravel()
+        else:
+            return phi

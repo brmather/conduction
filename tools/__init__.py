@@ -18,3 +18,4 @@ along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 
 from generate_xdmf import generateXdmf
 from meshtools import *
+from perplex_helper import PerplexTable

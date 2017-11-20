@@ -225,7 +225,9 @@ class InversionND(object):
         # ensure an objective function is provided
         # if self.objective_function is None:
             # raise ValueError("Pass an objective function")
-        c = 0.0
+
+        c = np.array(0.0) # local prior values same as global
+        c_obs = np.array(0.0) # obs have to be summed over all procs
 
         for arg in kwargs:
             val = kwargs[arg]
@@ -239,7 +241,11 @@ class InversionND(object):
                 ival = self.interpolate(val, obs.coords)
 
                 # weighting
-                c += self.objective_function(ival*obs.w, obs.v*obs.w, obs.dv)
+                c_obs += self.objective_function(ival*obs.w, obs.v*obs.w, obs.dv)
+
+        c_all = np.array(0.0)
+        comm.Allreduce([c_obs, MPI.DOUBLE], [c_all, MPI.DOUBLE], op=MPI.SUM)
+        c += c_all
 
         return c
 
@@ -340,6 +346,7 @@ class InversionND(object):
         lvec = self.mesh.lvec
 
         res = self.mesh.temperature
+        # res._gdata.setArray(rhs._gdata)
 
         self.ksp.setOperators(matrix)
         self.ksp.solve(rhs._gdata, res._gdata)
@@ -375,6 +382,7 @@ class InversionND(object):
             matrix_T = self.mesh._initialise_matrix()
             matrix.transpose(matrix_T)
             self.ksp_adT.setOperators(matrix_T)
+            gvec.setArray(rhs._gdata)
             self.ksp_adT.solve(rhs._gdata, gvec)
             self.mesh.dm.globalToLocal(gvec, db_ad)
 
@@ -402,6 +410,7 @@ class InversionND(object):
                     self.mesh.diffusivity[:] = kappa
                     dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
                     dAdklT = dAdkl * res._gdata
+                    gvec.setArray(dAdklT) # try make the solution somewhat close
                     self.ksp_ad.solve(dAdklT, gvec)
                     self.mesh.dm.globalToLocal(gvec, lvec)
                     if local_size > 0:
@@ -467,6 +476,22 @@ class InversionND(object):
         return dT.ravel(), dk.sum(axis=0)
 
 
+    def add_perplex_table(self, TPtable):
+        """
+        Add Perplex table.
+
+        Performs checks to make sure all lithologies exist inside
+        the table.
+        """
+        from ..tools import PerplexTable
+        if type(TPtable) is PerplexTable:
+            for idx in self.lithology_index:
+                if idx not in TPtable.table:
+                    raise ValueError('{} not in TPtable'.format(idx))
+            self.TPtable = TPtable
+        else:
+            raise ValueError('TPtable is incorrect type')
+
     def lookup_velocity(self, T=None, P=None):
         """
         Lookup velocity from VelocityTable object (vtable)
@@ -490,7 +515,7 @@ class InversionND(object):
             P = z*2700.0*9.806
 
         nl = len(self.lithology_index)
-        nf = self.vtable.ncol
+        nf = self.TPtable.ncol
 
         # preallocate memory
         V = np.zeros((nf, self.mesh.nn))
@@ -498,6 +523,6 @@ class InversionND(object):
         for i in range(0, nl):
             idx = self.lithology_mask[i]
             lith_idx = self.lithology_index[i]
-            V[:,idx] = self.vtable[lith_idx](T[idx], P[idx])
+            V[:,idx] = self.TPtable(T[idx], P[idx], lith_idx).T
 
         return V
