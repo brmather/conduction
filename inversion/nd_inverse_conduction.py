@@ -228,6 +228,7 @@ class InversionND(object):
 
         c = np.array(0.0) # local prior values same as global
         c_obs = np.array(0.0) # obs have to be summed over all procs
+        c_all = np.array(0.0) # sum of all obs
 
         for arg in kwargs:
             val = kwargs[arg]
@@ -243,7 +244,7 @@ class InversionND(object):
                 # weighting
                 c_obs += self.objective_function(ival*obs.w, obs.v*obs.w, obs.dv)
 
-        c_all = np.array(0.0)
+
         comm.Allreduce([c_obs, MPI.DOUBLE], [c_all, MPI.DOUBLE], op=MPI.SUM)
         c += c_all
 
@@ -512,7 +513,7 @@ class InversionND(object):
             T = self.mesh.temperature[:]
         if P is None:
             z = np.absolute(self.mesh.coords[:,-1])
-            P = z*2700.0*9.806
+            P = z*2700.0*9.806*1e-5
 
         nl = len(self.lithology_index)
         nf = self.TPtable.ncol

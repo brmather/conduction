@@ -17,7 +17,10 @@ along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import numpy as np
-from scipy.Interpolate import griddata
+from scipy.interpolate import griddata
+
+try: range=xrange
+except: pass
 
 class PerplexTable(object):
     """
@@ -93,13 +96,16 @@ class PerplexTable(object):
 
         for i in range(ncol):
             # find all invalid points
-            mask = ~np.logical_or(phi[:,i]==0, np.isnan(phi[:,i]))
+            mask = np.logical_or(phi[:,i]==0, np.isnan(phi[:,i]))
+            if mask.any():
+                imask = np.invert(mask)
+                phi[:,i] = griddata(xi[imask], phi[:,i][imask], (grid_T, grid_P), method='cubic').ravel()
 
-            phi[:,i] = griddata(xi[mask], phi[:,i][mask], (grid_T, grid_P), method='cubic').ravel()
-
-            # Replace with neighbour if the edges have NaNs
-            mask = ~np.logical_or(phi[:,i]==0, np.isnan(phi[:,i]))
-            phi[:,i] = griddata(xi[mask], phi[:,i][mask], (grid_T, grid_P), method='nearest').ravel()
+                # Replace with neighbour if the edges have NaNs
+                mask = np.logical_or(phi[:,i]==0, np.isnan(phi[:,i]))
+                if mask.any():
+                    imask = np.invert(mask)
+                    phi[:,i] = griddata(xi[imask], phi[:,i][imask], (grid_T, grid_P), method='nearest').ravel()
 
         phi = phi.astype(np.float16)
 
