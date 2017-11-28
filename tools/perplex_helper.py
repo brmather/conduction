@@ -47,7 +47,8 @@ class PerplexTable(object):
         coords = np.column_stack([T, P])
         self.tree = cKDTree(coords)
         self.table = dict()
-        self.ncol = 0
+        self.ncol = 1
+        self.nfield = 0
 
         self.T_range = np.unique(T)
         self.P_range = np.unique(P)
@@ -62,7 +63,7 @@ class PerplexTable(object):
          index  : int
         """
         if index not in self.table:
-            self.ncol += 1
+            self.nfield += 1
         field = self.process_tables(field)
         self.table[index] = field
 
@@ -90,6 +91,8 @@ class PerplexTable(object):
         ncol = 1
         if phi.ndim > 1:
             ncol = phi.shape[1]
+
+        self.ncol = ncol
 
         # convert to column vector (if not already)
         phi = phi.reshape(-1, ncol)
