@@ -513,7 +513,13 @@ class InversionND(object):
             T = self.mesh.temperature[:]
         if P is None:
             z = np.absolute(self.mesh.coords[:,-1])
-            P = z*2700.0*9.806*1e-5
+
+            rho = 2700.0
+            r = 6.38e6 # radius of the Earth
+            M = 5.98e24 # mass of the Earth
+            G = 6.673e-11 # gravitational constant
+            g = G*M/(r-z)**2
+            P = rho*g*z*1e-5
 
         nl = len(self.lithology_index)
         nf = self.TPtable.ncol
