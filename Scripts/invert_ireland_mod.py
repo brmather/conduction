@@ -199,7 +199,7 @@ layer_attributes = np.loadtxt(directory+'layers.info', skiprows=1, usecols=(2,3,
 layer_number = np.loadtxt(directory+'layers.info', dtype=int, skiprows=1, usecols=(0,))
 layer_name   = np.loadtxt(directory+'layers.info', dtype=str, skiprows=1, usecols=(1,))
 
-layer_header = ['body number', 'density', 'alpha', 'thermal conductivity', 'heat production rate',                'pressure coefficient', 'Gruneisen parameter', 'pressure derivative of bulk modulus', 'man']
+layer_header = ['body number', 'density', 'alpha', 'thermal conductivity', 'heat production rate', 'pressure coefficient', 'Gruneisen parameter', 'pressure derivative of bulk modulus', 'man']
 
 
 layer = dict()
@@ -398,9 +398,16 @@ eire_coord[:,0] = eire_E
 eire_coord[:,1] = eire_N
 
 qobs = InvObservation(eire_HF, eire_dHF, eire_coord)
-
 inv.add_observation(q=qobs)
 
+curie_coords = np.loadtxt('/opt/ben/Dropbox/GOTherm/curie-var-heat-vert-const_proj.xyz')
+curie_coords[:,2] *= 1e3
+
+curie_T = np.ones(curie_coords.shape[0])*(273.14 + 580.0)
+sigma_curie_T = curie_T*0.2
+
+Tobs = InvObservation(curie_T, sigma_curie_T, curie_coords)
+inv.add_observation(T=Tobs)
 
 # In[41]:
 
