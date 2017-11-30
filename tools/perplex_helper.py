@@ -64,7 +64,12 @@ class PerplexTable(object):
         """
         if index not in self.table:
             self.nfield += 1
-        field = self.process_tables(field)
+        # field = self.process_tables(field)
+        ncol = 1
+        if field.ndim > 1:
+            ncol = field.shape[1]
+
+        self.ncol = ncol
         self.table[index] = field
 
     def __call__(self, T, P, index):
@@ -87,12 +92,6 @@ class PerplexTable(object):
         """
         grid_T, grid_P = np.meshgrid(self.T_range, self.P_range)
         xi = self.tree.data
-
-        ncol = 1
-        if phi.ndim > 1:
-            ncol = phi.shape[1]
-
-        self.ncol = ncol
 
         # convert to column vector (if not already)
         phi = phi.reshape(-1, ncol)
