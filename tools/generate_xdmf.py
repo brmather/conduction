@@ -17,6 +17,11 @@ along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 def generateXdmf(HDF5_filename):
+    """
+    Generate a XDMF file to visualise HDF5 fields and vectors in Paraview.
+
+    Writes a XDMF file to the working directory.
+    """
 
     import h5py
     import os
@@ -114,6 +119,7 @@ def generateXdmf(HDF5_filename):
 
     write_footer(f)
     f.close()
+    h5file.close()
 
 if __name__ == '__main__':
     import sys

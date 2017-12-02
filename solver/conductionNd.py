@@ -523,6 +523,13 @@ class ConductionND(object):
 
         vec = self.gvec.duplicate()
 
+        # change mode to append if file already exists
+        if os.path.isfile(filename):
+            mode = 'a'
+        else:
+            mode = 'w'
+
+
         for key in kwdict:
             val = kwdict[key]
             try:
@@ -534,7 +541,7 @@ class ConductionND(object):
             vec.setName(key)
 
             ViewHDF5 = PETSc.Viewer()
-            ViewHDF5.createHDF5(filename, mode='a')
+            ViewHDF5.createHDF5(filename, mode=mode)
             ViewHDF5.view(obj=vec)
             ViewHDF5.destroy()
 
@@ -566,6 +573,12 @@ class ConductionND(object):
                                   and keyword: {}".format(key))
             kwdict[key] = arg
 
+        # change mode to append if file already exists
+        if os.path.isfile(filename):
+            mode = 'a'
+        else:
+            mode = 'w'
+
 
         # This is a flattened 3xn global vector
         gvec = self.dm.getCoordinates().duplicate()
@@ -580,7 +593,7 @@ class ConductionND(object):
             gvec.setName(key)
 
             ViewHDF5 = PETSc.Viewer()
-            ViewHDF5.createHDF5(filename, mode='a')
+            ViewHDF5.createHDF5(filename, mode=mode)
             ViewHDF5.view(obj=gvec)
             ViewHDF5.destroy()
 
