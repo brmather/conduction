@@ -32,7 +32,7 @@ class ConductionND(object):
     Implicit 3D steady-state heat equation solver over a structured grid using PETSc
     """
 
-    def __init__(self, minCoord, maxCoord, res):
+    def __init__(self, minCoord, maxCoord, res, **kwargs):
 
         dim = len(res)
         extent = np.zeros(dim*2)
@@ -48,9 +48,9 @@ class ConductionND(object):
         dm.setUniformCoordinates(*extent)
 
         self.dm = dm
+        self.lgmap = dm.getLGMap()
         self.lvec = dm.createLocalVector()
         self.gvec = dm.createGlobalVector()
-        self.lgmap = dm.getLGMap()
 
         # Setup matrix sizes
         self.sizes = self.gvec.getSizes(), self.gvec.getSizes()
@@ -91,6 +91,9 @@ class ConductionND(object):
         for i in range(0, dim):
             self.interior_slice[i] = slice(1, -1)
 
+
+        self.MatType = kwargs.pop('MatType', 'aij') # cuda, seqaij, mpiaij, etc.
+        self.VecType = kwargs.pop('VecType', 'standard')
 
         self._initialise_mesh_variables()
         self._initialise_boundary_dictionary()
@@ -189,7 +192,7 @@ class ConductionND(object):
             nnz = (self.stencil_width, self.dim*2)
 
         mat = PETSc.Mat().create(comm=comm)
-        mat.setType('aij')
+        mat.setType(self.MatType)
         mat.setSizes(self.sizes)
         mat.setLGMap(self.lgmap)
         mat.setPreallocationNNZ(nnz)
@@ -197,6 +200,16 @@ class ConductionND(object):
         mat.setFromOptions()
         
         return mat
+
+    def _initialise_vector(self, sizes):
+
+        vec = PETSc.Vec().create(comm=comm)
+        vec.setType(self.VecType)
+        vec.setSizes(self.sizes[0])
+        vec.setLGMap(self.lgmap)
+        vec.setFromOptions()
+
+        return vec
 
 
     def _create_closure_object(self, closure):
