@@ -238,11 +238,17 @@ nx, ny = Xcoords.size, Ycoords.size
 minX, minY = dminX, dminY
 maxX, maxY = dmaxX, dmaxY
 
-# minZ = -130e3
+# Overwrite dimensions
+## default are
+## min/max:
+##  x (350000000.0, 788000000.0)
+##  y (480000000.0, 1000000000.0)
+##  z (-35000.0, 122305302.84092408)
+## Nx, Ny, Nz = 55, 55, 105
+
 minZ = -35e3
 maxZ = 800.0
 Nx, Ny, Nz = 50, 50, 35
-
 
 if comm.rank == 0:
     print("min/max:\n x {}\n y {}\n z {}".format((minX, maxX),
@@ -276,7 +282,6 @@ Zcoords = np.unique(coords[:,2])
 nz, ny, nx = mesh.n
 
 
-# In[22]:
 
 
 ## Fill the volume between each surface
@@ -328,29 +333,16 @@ for l in xrange(0,10):
 # Fill everything above value
 layer_voxel[layer_voxel > 9] = 9
 
-
-# In[30]:
-
-
-# Boundary conditions
-topBC = 298.0
-bottomBC = 0.03
-
-mesh.boundary_condition('maxZ', topBC, flux=False)
-mesh.boundary_condition('minZ', bottomBC, flux=True)
-
-inv = conduction.InversionND(layer_voxel.ravel(), mesh)
-inv.nIter = 0
+lithology_index = np.unique(layer_voxel)
 
 
-size = len(inv.lithology_index)
-k  = np.zeros(size)
-H  = np.zeros(size)
-a  = np.zeros(size)
+k  = np.zeros_like(layer_voxel, dtype=np.float)
+H  = np.zeros_like(layer_voxel, dtype=np.float)
+a  = np.zeros_like(layer_voxel, dtype=np.float)
 q0 = 40e-3
-sigma_k  = np.zeros(size)
-sigma_H  = np.zeros(size)
-sigma_a  = np.zeros(size)
+sigma_k  = np.zeros_like(layer_voxel, dtype=np.float)
+sigma_H  = np.zeros_like(layer_voxel, dtype=np.float)
+sigma_a  = np.zeros_like(layer_voxel, dtype=np.float)
 sigma_q0 = 10e-3/4
 
 thermal_cond = layer_attributes[:,2]
@@ -364,31 +356,59 @@ heat_sources = np.hstack([[0.0],heat_sources,[0.0]])
 
 row_format = "{0:2} | {1:25}| {2:.2f} | {3:.2f} | {4:.2f}"
 
-for i, l in enumerate(inv.lithology_index):
+for i, l in enumerate(lithology_index):
+    idx = layer_voxel == l
+
     name = layer_name[i]
     ki = thermal_cond[i]
     Hi = heat_sources[i]
     ai = 0.33
 
-    k[i] = ki
-    H[i] = Hi
-    a[i] = ai
+    k[idx] = ki
+    H[idx] = Hi
+    a[idx] = ai
 
-    sigma_k[i] = ki*0.1
-    sigma_H[i] = 1e-7
-    sigma_a[i] = 0.1
+    sigma_k[idx] = ki*0.1
+    sigma_H[idx] = 1e-7
+    sigma_a[idx] = 0.1
 
     if comm.rank == 0:
         print(row_format.format(i, name, ki, Hi*1e6, ai))
 
-        
-# starting x0
-x0 = np.hstack([k, H, a, [q0]])
-x = x0
-dx = 0.01*x
+
+k = k.ravel()
+H = H.ravel()
+a = a.ravel()
+sigma_k = sigma_k.ravel()
+sigma_H = sigma_H.ravel()
+sigma_a = sigma_a.ravel()
 
 
-# In[31]:
+size = layer_voxel.size
+
+# bounded optimisation
+bounds = {'k' : (0.5, 5.5),
+          'H' : (0.0, 10e-6),
+          'a' : (0.0, 1.0),
+          'q0': (5e-3, 50e-3)}
+
+size = mesh.nn
+x_bounds = [bounds['k'],]*size
+x_bounds.extend([bounds['H'],]*size)
+x_bounds.extend([bounds['a'],]*size)
+x_bounds.append(tuple(bounds['q0']))
+
+
+# lithologies correspond to number of nodes
+inv_variables = np.arange(0, size)
+
+
+
+mesh.boundary_condition('maxZ', 298.0, flux=False)
+mesh.boundary_condition('minZ', q0, flux=True)
+
+inv = conduction.InversionND(inv_variables, mesh)
+inv.nIter = 0
 
 
 # Priors
@@ -399,8 +419,6 @@ q0p  = InvPrior(q0, sigma_q0)
 
 inv.add_prior(k=kp, H=Hp, a=ap, q0=q0p)
 
-
-# In[32]:
 
 
 # Observations
@@ -437,18 +455,12 @@ inv.ksp_ad  = inv._initialise_ksp(solver='bcgs', pc='bjacobi')
 inv.ksp_adT = inv._initialise_ksp(solver='bcgs')
 
 
-# bounded optimisation
-bounds = {'k' : (0.5, 5.5),
-          'H' : (0.0, 10e-6),
-          'a' : (0.0, 1.0),
-          'q0': (5e-3, 50e-3)}
+# In[37]:
 
-size = len(inv.lithology_index)
-x_bounds = [bounds['k'],]*size
-x_bounds.extend([bounds['H'],]*size)
-x_bounds.extend([bounds['a'],]*size)
-x_bounds.append(tuple(bounds['q0']))
-
+# starting x0
+x0 = np.hstack([k, H, a, [q0]])
+x = x0
+dx = 0.01*x
 
 
 # Save mesh attributes
