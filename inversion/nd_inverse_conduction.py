@@ -270,6 +270,9 @@ class InversionND(object):
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
                 # print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
+
+		# sync
+		# dcdv = self.mesh.sync(dcdv)
             else:
                 dcdv = np.zeros_like(val)
 
@@ -327,13 +330,16 @@ class InversionND(object):
         nl = len(self.lithology_index)
 
         lith_variables = np.zeros((nf, self.lithology_index.size))
+	all_lith_variables = np.zeros_like(lith_variables)
 
         for i in range(0, nl):
             idx = self.lithology_mask[i]
             for f in range(nf):
                 lith_variables[f,i] += args[f][idx].sum()
 
-        return list(lith_variables)
+        comm.Allreduce([lith_variables, MPI.DOUBLE], [all_lith_variables, MPI.DOUBLE], op=MPI.SUM)
+
+        return list(all_lith_variables)
 
 
     def linear_solve(self, matrix=None, rhs=None):
@@ -419,6 +425,9 @@ class InversionND(object):
 
             # return BCs to original
             # self.set_boundary_conditions(bc_vals, bc_flux)
+            dk_ad /= self.ghost_weights
+	    db_ad.array /= self.ghost_weights
+
 
             return dk_ad, db_ad.array
         else:
