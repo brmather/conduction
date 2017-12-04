@@ -272,7 +272,8 @@ class InversionND(object):
                 # print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
 
 		# sync
-		# dcdv = self.mesh.sync(dcdv)
+		dcdv /= self.ghost_weights
+		dcdv = self.mesh.sync(dcdv)
             else:
                 dcdv = np.zeros_like(val)
 

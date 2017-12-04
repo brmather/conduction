@@ -406,12 +406,13 @@ inv.add_prior(k=kp, H=Hp, a=ap, q0=q0p)
 # Observations
 ireland_HF = np.loadtxt('/opt/ben/Dropbox/GOTherm/data/ireland_heat_flow_proj.csv', delimiter=',', dtype=str, skiprows=1)
 
-eire_ID  = ireland_HF[:,1]
-eire_E   = ireland_HF[:,2].astype(float)
-eire_N   = ireland_HF[:,3].astype(float)
-eire_HF  = ireland_HF[:,9].astype(float) * 1e-3
-eire_dHF = ireland_HF[:,10].astype(np.float) * 1e-3
-eire_dHF[eire_dHF==0] = eire_HF[eire_dHF==0]*0.2
+qmask = ireland_HF[:,10].astype(float) != 0 # include only corrected data
+eire_ID  = ireland_HF[qmask,1]
+eire_E   = ireland_HF[qmask,2].astype(float)
+eire_N   = ireland_HF[qmask,3].astype(float)
+eire_HF  = ireland_HF[qmask,9].astype(float) * 1e-3
+eire_dHF = ireland_HF[qmask,10].astype(np.float) * 1e-3
+# eire_dHF[eire_dHF==0] = eire_HF[eire_dHF==0]*0.2
 
 eire_coord = np.zeros((eire_HF.size, 3))
 eire_coord[:,0] = eire_E

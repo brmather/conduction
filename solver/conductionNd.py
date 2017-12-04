@@ -483,9 +483,9 @@ class ConductionND(object):
         topo = f['topology']
 
         # create attributes
-        (minX, maxX), (minY, maxY), (minZ, maxZ) = self.dm.getBoundingBox()
-        minCoord = np.array([minX, minY, minZ])
-        maxCoord = np.array([maxX, maxY, maxZ])
+        extent = self.extent.reshape(self.dim,-1)
+        minCoord = extent[:,0]
+        maxCoord = extent[:,1]
         shape = self.dm.getSizes()
 
         topo.attrs.create('minCoord', minCoord[::-1])
@@ -580,12 +580,14 @@ class ConductionND(object):
             mode = 'w'
 
 
-        # This is a flattened 3xn global vector
+        # This is a flattened dim x n global vector
         gvec = self.dm.getCoordinates().duplicate()
 
         for key in kwdict:
-            vx, vy, vz = kwdict[key]
-            val = np.column_stack([vx, vy, vz]).ravel()
+            val = np.array(kwdict[key]).T.ravel()
+
+            # vx, vy, vz = kwdict[key]
+            # val = np.column_stack([vx, vy, vz]).ravel()
 
             gvec.assemblyBegin()
             gvec.setValuesLocal(np.arange(val.size, dtype=PETSc.IntType), val)
