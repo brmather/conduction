@@ -89,6 +89,7 @@ class InversionND(object):
         # these should be depreciated soon
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
+        self.iii = 0
 
 
     def _initialise_ksp(self, matrix=None, atol=1e-10, rtol=1e-50, **kwargs):
@@ -265,15 +266,14 @@ class InversionND(object):
                 ival = self.interpolate(val, obs.coords)
 
                 # weighting
-                dcdinterp = self.objective_function_ad(ival*obs.w, obs.v*obs.w, obs.dv)
+                dcdinterp = self.objective_function_ad(ival, obs.v, obs.dv)
 
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
                 # print arg, np.shape(val), np.shape(ival), np.shape(dcdv)
 
-		# sync
-		dcdv /= self.ghost_weights
-		dcdv = self.mesh.sync(dcdv)
+                # sync
+                dcdv = self.mesh.sync(dcdv)
             else:
                 dcdv = np.zeros_like(val)
 
@@ -331,12 +331,12 @@ class InversionND(object):
         nl = len(self.lithology_index)
 
         lith_variables = np.zeros((nf, self.lithology_index.size))
-	all_lith_variables = np.zeros_like(lith_variables)
+        all_lith_variables = np.zeros_like(lith_variables)
 
         for i in range(0, nl):
             idx = self.lithology_mask[i]
             for f in range(nf):
-                lith_variables[f,i] += args[f][idx].sum()
+                lith_variables[f,i] += (args[f]/self.ghost_weights)[idx].sum()
 
         comm.Allreduce([lith_variables, MPI.DOUBLE], [all_lith_variables, MPI.DOUBLE], op=MPI.SUM)
 
@@ -411,6 +411,7 @@ class InversionND(object):
                 gnodes = self.ghost_weights[idx_n]
                 local_size = np.array(float(idx_n.size)) - np.sum(1.0 - 1.0/gnodes) # ghost nodes
                 comm.Allreduce([local_size, MPI.DOUBLE], [lith_size, MPI.DOUBLE], op=MPI.SUM)
+                # print comm.rank, i, lith_size, idx_n.size
 
                 if lith_size > 0:
                     kappa.fill(0.0)
@@ -421,13 +422,18 @@ class InversionND(object):
                     gvec.setArray(dAdklT) # try make the solution somewhat close
                     self.ksp_ad.solve(dAdklT, gvec)
                     self.mesh.dm.globalToLocal(gvec, lvec)
-                    if local_size > 0:
-                        dk_ad[idx_n] += dT_ad.dot(lvec.array)/lith_size
 
-            # return BCs to original
-            # self.set_boundary_conditions(bc_vals, bc_flux)
-            dk_ad /= self.ghost_weights
-	    db_ad.array /= self.ghost_weights
+                    # need to call sum on the global vec
+                    dk_local = (dT_ad*lvec.array)/lith_size
+                    lvec.setArray(dk_local)
+                    self.mesh.dm.localToGlobal(lvec, gvec)
+                    gdot = gvec.sum()
+
+                    if local_size > 0:
+                        # splatter inside vector
+                        dk_ad[idx_n] += gdot
+
+            dk_ad = self.mesh.sync(dk_ad)
 
 
             return dk_ad, db_ad.array

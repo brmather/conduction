@@ -344,6 +344,27 @@ inv.nIter = 0
 
 
 size = len(inv.lithology_index)
+
+# bounded optimisation
+bounds = {'k' : (0.5, 7.0),
+          'H' : (0.0, 10e-6),
+          'a' : (0.0, 1.0),
+          'q0': (5e-3, 70e-3)}
+
+
+# Create bounds the same length as x
+k_lower   = np.ones(size)*bounds['k'][0]
+H_lower   = np.ones(size)*bounds['H'][0]
+a_lower   = np.ones(size)*bounds['a'][0]
+q0_lower  = bounds['q0'][0]
+k_upper   = np.ones(size)*bounds['k'][1]
+H_upper   = np.ones(size)*bounds['H'][1]
+a_upper   = np.ones(size)*bounds['a'][1]
+q0_upper  = bounds['q0'][1]
+
+
+
+size = len(inv.lithology_index)
 k  = np.zeros(size)
 H  = np.zeros(size)
 a  = np.zeros(size)
@@ -351,7 +372,7 @@ q0 = 40e-3
 sigma_k  = np.zeros(size)
 sigma_H  = np.zeros(size)
 sigma_a  = np.zeros(size)
-sigma_q0 = 10e-3/4
+sigma_q0 = 10e-3
 
 thermal_cond = layer_attributes[:,2]
 heat_sources = layer_attributes[:,3]
@@ -375,11 +396,27 @@ for i, l in enumerate(inv.lithology_index):
     a[i] = ai
 
     sigma_k[i] = ki*0.1
-    sigma_H[i] = 1e-7
+    sigma_H[i] = 1e-6
     sigma_a[i] = 0.1
+
+    if name == 'Air':
+        ai = 0.0
+        a[i] = ai
+
+        k_lower[i] = ki
+        H_lower[i] = Hi
+        a_lower[i] = ai
+        k_upper[i] = ki
+        H_upper[i] = Hi
+        a_upper[i] = ai
 
     if comm.rank == 0:
         print(row_format.format(i, name, ki, Hi*1e6, ai))
+
+
+x_lower = np.hstack([k_lower, H_lower, a_lower, [q0_lower]])
+x_upper = np.hstack([k_upper, H_upper, a_upper, [q0_upper]])
+x_bounds = zip(x_lower, x_upper)
 
         
 # starting x0
@@ -436,20 +473,6 @@ inv.add_observation(T=Tobs)
 inv.ksp = inv._initialise_ksp(solver='gmres', pc='bjacobi')
 inv.ksp_ad  = inv._initialise_ksp(solver='bcgs', pc='bjacobi')
 inv.ksp_adT = inv._initialise_ksp(solver='bcgs')
-
-
-# bounded optimisation
-bounds = {'k' : (0.5, 5.5),
-          'H' : (0.0, 10e-6),
-          'a' : (0.0, 1.0),
-          'q0': (5e-3, 50e-3)}
-
-size = len(inv.lithology_index)
-x_bounds = [bounds['k'],]*size
-x_bounds.extend([bounds['H'],]*size)
-x_bounds.extend([bounds['a'],]*size)
-x_bounds.append(tuple(bounds['q0']))
-
 
 
 # Save mesh attributes
