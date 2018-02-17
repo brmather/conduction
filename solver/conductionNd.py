@@ -43,8 +43,9 @@ class ConductionND(object):
             extent[index+1] = maxCoord[i]
             index += 2
 
+        width = kwargs.pop('stencil_width', 1)
 
-        dm = PETSc.DMDA().create(dim=dim, sizes=res, stencil_width=1, comm=comm)
+        dm = PETSc.DMDA().create(dim=dim, sizes=res, stencil_width=width, comm=comm)
         dm.setUniformCoordinates(*extent)
 
         self.dm = dm
@@ -56,6 +57,7 @@ class ConductionND(object):
         self.sizes = self.gvec.getSizes(), self.gvec.getSizes()
         self.dim = dim
         self.extent = extent
+
 
         # include ghost nodes in local domain
         # (minI, maxI), (minJ, maxJ), (minK, maxK) = dm.getGhostRanges()
@@ -71,34 +73,33 @@ class ConductionND(object):
         self.nn = nn
 
         # stencil size
-        self.stencil_width = 2*dim + 1
+        self.width = width
+        self.stencil_width = 2*dim*width + 1
+
+
+        # create closure array
+        closure = []
+        for w in range(width, 0, -1):
+            closure_array = self._get_closure_array(dim, w, width)
+            closure.extend(closure_array[:-1])
+        closure.append(closure_array[-1]) # centre node at last
+
+        # create closure object
+        self.closure = self._create_closure_object(closure, width)
+
 
         # local numbering
         self.nodes = np.arange(0, nn, dtype=PETSc.IntType)
 
-        # closure depends on dim
-        if dim == 1:
-            closure = [(0,-2),(2,0),(1,-1)]
-        elif dim == 2:
-            closure = [(0,-2), (1,-1), (2,0), (1,-1), (1,-1)]
-        elif dim == 3:
-            closure = [(0,-2), (1,-1), (1,-1), (2,0), (1,-1), (1,-1), (1,-1)]
-        self.closure = self._create_closure_object(closure)
 
-
-        # interior slices
-        self.interior_slice = [None]*dim
-        for i in range(0, dim):
-            self.interior_slice[i] = slice(1, -1)
-
-
+        # set matrix and vector types
         self.MatType = kwargs.pop('MatType', 'aij') # cuda, seqaij, mpiaij, etc.
         self.VecType = kwargs.pop('VecType', 'standard')
 
         self._initialise_mesh_variables()
         self._initialise_boundary_dictionary()
         self.mat = self._initialise_matrix()
-        self._initialise_COO_vectors()
+        self._initialise_COO_vectors(width)
 
         # thermal properties
         self.diffusivity  = MeshVariable('diffusivity', dm)
@@ -109,15 +110,12 @@ class ConductionND(object):
         self.rhs = MeshVariable('rhs', dm)
 
 
-    def _initialise_COO_vectors(self):
+    def _initialise_COO_vectors(self, pad=1):
 
         nn = self.nn
         n = self.n
 
-        index = np.empty(n + 2, dtype=PETSc.IntType)
-        index.fill(-1)
-        index[self.interior_slice] = self.nodes.reshape(n)
-        self.index = index
+        self.index = np.pad(self.nodes.reshape(n), pad, 'constant', constant_values=-1)
 
         self.rows = np.empty((self.stencil_width, nn), dtype=PETSc.IntType)
         self.cols = np.empty((self.stencil_width, nn), dtype=PETSc.IntType)
@@ -212,18 +210,35 @@ class ConductionND(object):
         return vec
 
 
-    def _create_closure_object(self, closure):
+    def _create_closure_object(self, closure, pad=1):
 
+        nc = len(closure)
         n = self.n
-        obj = [[0] * self.dim for i in range(self.stencil_width)]
+        p2 = 2*pad
+        obj = [[0] * self.dim for i in range(nc)]
 
-        for i in range(0, self.stencil_width):
+        for i in range(0, nc):
             # construct slicing object
             for j in range(0, self.dim):
                 start, end = closure[i-j]
-                obj[i][j] = slice(start, n[j]+end+2)
+                obj[i][j] = slice(start, n[j]+end+p2)
 
         return obj
+
+    def _get_closure_array(self, dim, width=1, pad=1):
+        w, p = width, pad
+        if w > p:
+            raise ValueError('width exceeds padding')
+
+        if dim == 1:
+            closure = [(p-w,-p-w), (p+w,-(p-w)), (p,-p)]
+        elif dim == 2:
+            closure = [(p-w,-p-w), (p,-p), (p+w,-(p-w)), (p,-p), (p,-p)]
+        elif dim == 3:
+            closure = [(p-w,-p-w), (p,-p), (p,-p), (p+w,-(p-w)), (p,-p), (p,-p), (p,-p)]
+        else:
+            raise ValueError('{} is an invalid number of dimensions'.format(dim))
+        return closure
 
 
     def refine(self, fn, axis):
@@ -279,7 +294,7 @@ class ConductionND(object):
         wall = str(wall)
 
         if wall in self.bc:
-            self.bc[wall]["val"]  = float(val)
+            self.bc[wall]["val"]  = np.array(val, copy=True)
             self.bc[wall]["flux"] = bool(flux)
             d = self.bc[wall]
 
@@ -293,6 +308,39 @@ class ConductionND(object):
 
         else:
             raise ValueError("Wall should be one of {}".format(self.bc.keys()))
+
+
+    def find_neighbours(self, width=1):
+        """
+        Find node neighbours for each point in the domain
+
+        Returns a point cloud of neighbours shape(n,nneighbours)
+        -1 indicates a null value
+        """
+
+        nodes = self.nodes
+        dim = self.dim
+        n = self.n
+
+        # setup new stencil
+        stencil_width = 2*self.dim*width + 1
+        neighbours = np.empty((stencil_width, self.nn), dtype=PETSc.IntType)
+        index = np.pad(nodes.reshape(n), width, 'constant', constant_values=-1)
+
+        closure = []
+        for w in range(width, 0, -1):
+            closure_array = self._get_closure_array(dim, w, width)
+            closure.extend(closure_array[:-1])
+        closure.append(closure_array[-1]) # centre node at last
+
+        # create closure object
+        closure = self._create_closure_object(closure, width)
+
+        for i in range(0, stencil_width):
+            obj = closure[i]
+            neighbours[i] = index[obj].ravel()
+
+        return neighbours.T
 
 
 
@@ -327,9 +375,7 @@ class ConductionND(object):
         dirichlet_mask = self.dirichlet_mask
 
         u = self.diffusivity[:].reshape(n)
-
-        k = np.zeros(n + 2)
-        k[self.interior_slice] = u
+        k = np.pad(u, self.width, 'constant', constant_values=0)
 
         for i in range(0, self.stencil_width):
             obj = self.closure[i]

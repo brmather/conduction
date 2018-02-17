@@ -2,6 +2,8 @@
 import numpy as np
 import conduction
 from conduction import ConductionND
+from conduction.solver.conduction3d import Conduction3D
+
 
 
 minX, minY, minZ = 0., 0., 0.
@@ -13,9 +15,9 @@ minCoords = np.array([minX, minY, minZ])
 maxCoords = np.array([maxX, maxY, maxZ])
 res = np.array([nx, ny, nz])
 
-Conduction = {2: conduction.Conduction2D, 3: conduction.Conduction3D}
+Conduction = {3: Conduction3D}
 
-for n in range(2,4):
+for n in range(3,4):
 
     mesh1 = Conduction[n](minCoords[0:n], maxCoords[0:n], res[0:n])
     mesh2 = ConductionND(minCoords[0:n], maxCoords[0:n], res[0:n])

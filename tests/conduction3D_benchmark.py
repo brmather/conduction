@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from petsc4py import PETSc
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
-from conduction import Conduction3D
+from conduction import ConductionND
 
 
 minX, maxX = 0.0, 1.0
@@ -12,7 +12,7 @@ minY, maxY = 1.0, 2.0
 minZ, maxZ = 3.0, 4.0
 nx, ny, nz = 10, 10, 10
 
-ode = Conduction3D((minX, minY, minZ), (maxX, maxY, maxZ), (nx,ny,nz))
+ode = ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (nx,ny,nz))
 
 
 indices = ode.dm.getLGMap().indices
@@ -21,7 +21,7 @@ indices = ode.dm.getLGMap().indices
 # print comm.rank, indices.reshape(ode.nz,ode.ny,ode.nx)
 
 
-conductivity = np.ones(ode.nx*ode.ny*ode.nz)
+conductivity = np.ones(ode.nn)
 heat_sources = np.ones_like(conductivity) #* 1e1
 ode.update_properties(conductivity, heat_sources)
 
@@ -57,9 +57,9 @@ ksp.setFromOptions()
 
 res = ode.dm.createGlobalVector()
 
-ksp.solve(rhs, res)
+ksp.solve(rhs._gdata, res)
 
-tozero, zvec = PETSc.Scatter.toZero(rhs)
+tozero, zvec = PETSc.Scatter.toZero(rhs._gdata)
 
 U = ode.dm.createNaturalVector()
 ode.dm.globalToNatural(res, U)
@@ -67,7 +67,7 @@ tozero.scatter(U, zvec)
 T = zvec.array.copy()
 ode.lvec.setArray(ode.dirichlet_mask)
 ode.dm.localToGlobal(ode.lvec, res)
-tozero.scatter(rhs, zvec)
+tozero.scatter(rhs._gdata, zvec)
 M = zvec.array.copy().astype(bool)
 
 
