@@ -14,7 +14,8 @@
 import numpy as np
 from time import clock
 from conduction import ConductionND
-from conduction import Inversion
+from conduction.inversion import InvObservation, InvPrior
+from conduction import InversionND
 from petsc4py import PETSc
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -47,7 +48,7 @@ lithology[:,7:,:]  = 2
 lithology = lithology[minK:maxK, minJ:maxJ, minI:maxI]
 
 
-inv = Inversion(lithology.flatten(), mesh)
+inv = InversionND(lithology.flatten(), mesh)
 
 
 k = np.array([3.5, 2.0, 3.2])
@@ -61,23 +62,22 @@ a = np.array([0.3, 0.3, 0.3])
 q0 = 35e-3
 
 # Inversion variables
-x = PETSc.Vec().createWithArray(np.hstack([k, H, a, [q0]]))
+x = np.hstack([k, H, a, [q0]])
 dx = x*0.01
-gradient = x.duplicate()
-# x.setSizes(k.size*3+1)
-# x.setUp()
-# x.setArray(n)
 
 # Priors
 k_prior = k*1.1
 H_prior = H*1.1
 a_prior = a*1.1
-
 sigma_k = k*0.1
 sigma_H = H*0.1
 sigma_a = a*0.1
 
-inv.add_prior(k=(k_prior,sigma_k), H=(H_prior,sigma_H), a=(a_prior,sigma_a), q0=(30e-3, 5e-3))
+kp = InvPrior(k_prior, sigma_k)
+Hp = InvPrior(H_prior, sigma_H)
+ap = InvPrior(a_prior, sigma_a)
+q0p = InvPrior(q0, sigma_q0)
+inv.add_prior(k=ap, H=Hp, a=ap, q0=q0p)
 
 fm0 = inv.forward_model(x)
 fm1 = inv.forward_model(x+dx)
@@ -104,6 +104,9 @@ q_coord[:,0] = np.random.random(5)*1e3
 q_coord[:,1] = np.random.random(5)*1e3
 q_coord[:,2] = 0.0
 q_coord = q_coord
+
+qobs = InvObservation(q_obs, sigma_q, q_coord)
+inv.add_observation(q=qobs)
 
 ## Replace with coordinates on the grid
 # minX, maxX = mesh.coords[:,0].min(), mesh.coords[:,0].max()
