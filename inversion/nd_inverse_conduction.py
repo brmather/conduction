@@ -34,7 +34,7 @@ class InversionND(object):
 
     def __init__(self, lithology, mesh, **kwargs):
         self.mesh = mesh
-        self.lithology = np.array(lithology).ravel()
+        lithology = np.array(lithology).ravel()
 
         # communicate lithology index
         lithology_index = np.unique(lithology)
@@ -45,11 +45,10 @@ class InversionND(object):
         comm.Allreduce([lith_min, MPI.INT], [all_lith_min, MPI.INT], op=MPI.MIN)
         comm.Allreduce([lith_max, MPI.INT], [all_lith_max, MPI.INT], op=MPI.MAX)
 
-        self.lithology_index = np.arange(all_lith_min, all_lith_max+1)
-        self.lithology_mask = list(range(len(self.lithology_index)))
 
-        for i, index in enumerate(self.lithology_index):
-            self.lithology_mask[i] = np.nonzero(self.lithology == index)[0]
+        # update internal mask structures
+        self.lithology_index = np.arange(all_lith_min, all_lith_max+1)
+        self.update_lithology(lithology)
 
 
         # Custom linear / nearest-neighbour interpolator
@@ -90,6 +89,35 @@ class InversionND(object):
         self.temperature = self.mesh.gvec.duplicate()
         self._temperature = self.mesh.gvec.duplicate()
         self.iii = 0
+
+
+    def update_lithology(self, new_lithology):
+        """
+        Update the configuration of lithologies
+
+        Internal mask structures are updated to reflect the change in
+        lithology configuration
+        """
+
+        new_lithology = np.array(new_lithology).ravel()
+
+        nl = len(self.lithology_index)
+        lithology_mask = [i for i in range(nl)]
+
+        for i, index in enumerate(self.lithology_index):
+            lithology_mask[i] = np.nonzero(new_lithology == index)[0]
+
+        self.lithology_mask = lithology_mask
+        self._lithology = new_lithology
+
+        return
+
+    @property
+    def lithology(self):
+        return self._lithology
+    @lithology.setter
+    def lithology(self, new_lithology):
+        self.update_lithology(new_lithology)
 
 
     def _initialise_ksp(self, matrix=None, atol=1e-10, rtol=1e-50, **kwargs):
@@ -312,7 +340,7 @@ class InversionND(object):
         nl = len(self.lithology_index)
 
         # preallocate memory
-        mesh_variables = np.zeros((nf, self.lithology.size))
+        mesh_variables = np.zeros((nf, self.mesh.nn))
 
         # unpack vector to field
         for i in range(0, nl):
