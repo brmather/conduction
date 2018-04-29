@@ -22,6 +22,7 @@ except: pass
 import numpy as np
 from ..interpolation import RegularGridInterpolator, KDTreeInterpolator
 from ..mesh import MeshVariable
+from ..tools import sum_duplicates
 from .objective_variables import InvPrior, InvObservation
 from .grad_ad import gradient_ad as ad_grad
 
@@ -308,6 +309,91 @@ class InversionND(object):
         return dcdv
 
 
+    def create_covariance_matrix(self, sigma_x0, width=1, fn=None, *args):
+        """
+        Create a covariance matrix assuming some function for variables on the mesh
+        By default this is Gaussian.
+
+        Arguments
+        ---------
+         sigma_x0 : uncertainty values to insert into matrix
+         width    : width of stencil for matrix (int)
+            i.e. extended number of neighbours for each node
+         fn     : function to apply (default is Gaussian)
+         *args  : input arguments to pass to fn
+
+        Returns
+        -------
+            mat : covariance matrix
+        """
+
+        def gaussian_fn(sigma_x0, dist, *args):
+            L = max(1e-12, dist.max() - dist.min()) # length scale
+            return sigma_x0**2 * np.exp(-dist**2/(2*L**2))
+
+        if type(fn) == type(None):
+            fn = gaussian_fn
+
+        nodes = self.mesh.nodes
+        nn = self.mesh.nn
+        n = self.mesh.n
+        dim = self.mesh.dim
+
+        coords = self.mesh.coords
+
+        # setup new stencil
+        stencil_width = 2*self.mesh.dim*width + 1
+        rows = np.empty((stencil_width, self.mesh.nn), dtype=PETSc.IntType)
+        cols = np.empty((stencil_width, self.mesh.nn), dtype=PETSc.IntType)
+        vals = np.empty((stencil_width, self.mesh.nn))
+        index = np.pad(nodes.reshape(n), width, 'constant', constant_values=-1)
+        sigma = np.pad(sigma_x0.reshape(n), width, 'constant', constant_values=0)
+
+        closure = []
+        for w in range(width, 0, -1):
+            closure_array = self.mesh._get_closure_array(dim, w, width)
+            closure.extend(closure_array[:-1])
+        closure.append(closure_array[-1]) # centre node at last
+
+        # create closure object
+        closure = self.mesh._create_closure_object(closure, width)
+
+
+        for i in range(0, stencil_width):
+            obj = closure[i]
+
+            rows[i] = nodes
+            cols[i] = index[obj].ravel()
+
+            distance = np.linalg.norm(coords[cols[i]] - coords, axis=1)
+            vals[i] = fn(sigma[obj].ravel(), distance, *args)
+
+        vals[cols < 0] = 0.0
+        vals[-1] = 0.0
+
+        row = rows.ravel()
+        col = cols.ravel()
+        val = vals.ravel()
+
+        # mask off-grid entries and sum duplicates
+        mask = col >= 0
+        row, col, val = sum_duplicates(row[mask], col[mask], val[mask])
+
+        nnz = np.bincount(row)
+        indptr = np.insert(np.cumsum(nnz),0,0)
+
+        mat = self.mesh._initialise_matrix()
+        mat.assemblyBegin()
+        mat.setValuesLocalCSR(indptr.astype(PETSc.IntType), col, val)
+        mat.assemblyEnd()
+
+        # set diagonal vector
+        lvec = self.mesh.lvec
+        gvec = self.mesh.gvec
+        lvec.setArray(sigma_x0**2)
+        self.mesh.dm.localToGlobal(lvec, gvec)
+        mat.setDiagonal(gvec)
+        return mat
 
 
 
