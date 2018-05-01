@@ -16,6 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from inverse_conduction import Inversion
-from nd_inverse_conduction import InversionND
-from objective_variables import *
+from .inverse_conduction import Inversion
+from .nd_inverse_conduction import InversionND
+from .objective_variables import *
