@@ -19,3 +19,4 @@ along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 from .inverse_conduction import Inversion
 from .nd_inverse_conduction import InversionND
 from .objective_variables import *
+from .covariance import create_covariance_matrix
