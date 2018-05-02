@@ -414,6 +414,52 @@ class InversionND(object):
         return (2.0*x - 2.0*x0)/sigma_x0**2
 
 
+    def objective_function_lstsq(self, x, x0, cov):
+        """
+        Nonlinear least squares objective function
+        """
+        ksp = PETSc.KSP().create(comm)
+        ksp.setPC('lu')
+        ksp.setOperators(cov)
+        ksp.setFromOptions()
+
+        misfit = np.array(x - x0)
+        lhs, rhs = cov.createVecs()
+        rhs.setArray(misfit)
+        ksp.solve(rhs, lhs)
+        sol = rhs*lhs
+        sol.scale(0.5)
+
+        ksp.destroy()
+        lhs.destroy()
+        rhs.destroy()
+
+        return sol.sum()
+
+    def objective_function_lstsq_ad(self, x, x0, cov):
+        """
+        Adjoint of the nonlinear least squares objective function
+        """
+        ksp = PETSc.KSP().create(comm)
+        ksp.setPC('lu')
+        ksp.setOperators(cov)
+        ksp.setFromOptions()
+
+        misfit = np.array(x - x0)
+        lhs, rhs = cov.createVecs()
+        rhs.set(1.0)
+        ksp.solveTranspose(rhs, lhs)
+        sol = rhs
+        sol.setArray(misfit)
+        sol *= lhs
+        sol.scale(0.5)
+
+        ksp.destroy()
+        lhs.destroy()
+
+        return sol.array
+
+
     def map(self, *args):
         """
         Requires a tuple of vectors corresponding to an inversion variable
