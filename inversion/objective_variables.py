@@ -17,6 +17,8 @@ along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import numpy as np
+from .covariance import gaussian as gaussian_function
+from .covariance import create_covariance_matrix as covariance_matrix
 
 class InvObservation(object):
     """
@@ -24,23 +26,42 @@ class InvObservation(object):
 
     This requires an interpolation object with information on
     ghost points
-    """
 
-    def __init__(self, obs, obs_err, obs_coords=None):
-        """
-        Arguments
-        ---------
-         label      : label to give observation
-         obs        : observations
-         obs_err    : observational uncertainty
-         obs_coords : coordinates in Cartesian N-dimensional space
-                    : (optional) ndarray shape (n, dim)
-        """
+    Arguments
+    ---------
+     label      : label to give observation
+     obs        : observations
+     obs_err    : observational uncertainty
+     obs_coords : coordinates in Cartesian N-dimensional space
+                : (optional) ndarray shape (n, dim)
+     cov_mat    : data covariance matrix
+                  (optional) uses the l2-norm otherwise
+    """
+    def __init__(self, obs, obs_err, obs_coords=None, cov_mat=None):
+
         self.v = obs
         self.dv = obs_err
         self.coords = obs_coords
+        self.cov = cov_mat
 
         # self.gweight = self.ghost_weights()
+
+    def construct_covariance_matrix(self, max_dist, func, *args):
+        """
+        Construct a covariance matrix based on the uncertainty
+        of the data and a distance scale.
+
+        See inversion.covariance.create_covariance_matrix for more.
+
+        Arguments
+        ---------
+         max_dist : maximum radius to search for points
+         func     : covariance function (default is Gaussian)
+            (pass a length parameter if using default)
+         args     : arguments to pass to func
+        """
+        sigma = self.dv
+        self.cov = covariance_matrix(sigma, self.coords, max_dist, func, *args)
 
 
     def ghost_weights(self):
@@ -55,22 +76,27 @@ class InvObservation(object):
         return w
 
 
+
 class InvPrior(object):
     """
     Prior for use in an objective function
-    """
 
-    def __init__(self, prior, prior_err):
-        """
-        Arguments
-        ---------
-         label     : label to give prior
-         prior     : prior
-         prior_err : prior uncertainty
-        """
+    Arguments
+    ---------
+     label      : label to give prior
+     prior      : prior
+     prior_err  : prior uncertainty
+     cov_mat    : prior covariance matrix
+                  (optional) uses the l2-norm otherwise
+    """
+    def __init__(self, prior, prior_err, cov_mat=None):
 
         self.v = prior
         self.dv = prior_err
+        self.cov = cov_mat
         # self.gweight = 1.0
 
         # self.label = str(label)
+
+    def construct_covariance_matrix(self, max_dist, func, *args):
+        raise NotImplementedError("On the bucket list")

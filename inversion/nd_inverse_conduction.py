@@ -271,7 +271,7 @@ class InversionND(object):
                 # interpolation
                 ival = self.interpolate(val, obs.coords)
 
-                # weighting
+                # weighting for ghost nodes
                 c_obs += self.objective_function(ival*obs.w, obs.v*obs.w, obs.dv)
 
 
