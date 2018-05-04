@@ -46,7 +46,7 @@ class InvObservation(object):
 
         # self.gweight = self.ghost_weights()
 
-    def construct_covariance_matrix(self, max_dist, func, *args):
+    def construct_covariance_matrix(self, max_dist, func=gaussian_function, *args, **kwargs):
         """
         Construct a covariance matrix based on the uncertainty
         of the data and a distance scale.
@@ -59,9 +59,10 @@ class InvObservation(object):
          func     : covariance function (default is Gaussian)
             (pass a length parameter if using default)
          args     : arguments to pass to func
+         kwargs   : keyword arguments to pass to func
         """
         sigma = self.dv
-        self.cov = covariance_matrix(sigma, self.coords, max_dist, func, *args)
+        self.cov = covariance_matrix(sigma, self.coords, max_dist, func, *args, **kwargs)
 
 
     def ghost_weights(self):

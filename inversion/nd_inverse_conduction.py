@@ -264,7 +264,11 @@ class InversionND(object):
             val = kwargs[arg]
             if arg in self.prior:
                 prior = self.prior[arg]
-                c += self.objective_function(val, prior.v, prior.dv)
+
+                if prior.cov is None:
+                    c += self.objective_function(val, prior.v, prior.dv)
+                else:
+                    c += self.objective_function_lstsq(val, prior.v, prior.cov)
             elif arg in self.observation:
                 obs = self.observation[arg]
 
@@ -272,12 +276,15 @@ class InversionND(object):
                 ival = self.interpolate(val, obs.coords)
 
                 # weighting for ghost nodes
-                c_obs += self.objective_function(ival*obs.w, obs.v*obs.w, obs.dv)
+                if obs.cov is None:
+                    c_obs += self.objective_function(ival*obs.w, obs.v*obs.w, obs.dv)
+                else:
+                    c_obs += self.objective_function_lstsq(ival*obs.w, obs.v*obs.w, obs.cov)
+
 
 
         comm.Allreduce([c_obs, MPI.DOUBLE], [c_all, MPI.DOUBLE], op=MPI.SUM)
         c += c_all
-
         return c
 
     def objective_routine_ad(self, **kwargs):
@@ -288,14 +295,21 @@ class InversionND(object):
             val = kwargs[arg]
             if arg in self.prior:
                 prior = self.prior[arg]
-                dcdv = self.objective_function_ad(val, prior.v, prior.dv)
+                if prior.cov is None:
+                    dcdv = self.objective_function_ad(val, prior.v, prior.dv)
+                else:
+                    dcdv = self.objective_function_lstsq_ad(val, prior.v, prior.cov)
+
             elif arg in self.observation:
                 obs = self.observation[arg]
 
                 ival = self.interpolate(val, obs.coords)
 
-                # weighting
-                dcdinterp = self.objective_function_ad(ival, obs.v, obs.dv)
+
+                if obs.cov is None:
+                    dcdinterp = self.objective_function_ad(ival, obs.v, obs.dv)
+                else:
+                    dcdinterp = self.objective_function_lstsq_ad(ival, obs.v, obs.cov)
 
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
@@ -408,21 +422,17 @@ class InversionND(object):
 
 
     def objective_function(self, x, x0, sigma_x0):
-        return np.sum((x - x0)**2/sigma_x0**2)
+        return np.sum(0.5*(x - x0)**2/sigma_x0**2)
 
     def objective_function_ad(self, x, x0, sigma_x0):
-        return (2.0*x - 2.0*x0)/sigma_x0**2
+        return 0.5*(2.0*x - 2.0*x0)/sigma_x0**2
 
 
     def objective_function_lstsq(self, x, x0, cov):
         """
         Nonlinear least squares objective function
         """
-        ksp = PETSc.KSP().create(comm)
-        ksp.setPC('lu')
-        ksp.setOperators(cov)
-        ksp.setFromOptions()
-
+        ksp = self._initialise_ksp(cov, pc='lu')
         misfit = np.array(x - x0)
         lhs, rhs = cov.createVecs()
         rhs.setArray(misfit)
@@ -440,10 +450,7 @@ class InversionND(object):
         """
         Adjoint of the nonlinear least squares objective function
         """
-        ksp = PETSc.KSP().create(comm)
-        ksp.setPC('lu')
-        ksp.setOperators(cov)
-        ksp.setFromOptions()
+        ksp = self._initialise_ksp(cov, pc='lu')
 
         misfit = np.array(x - x0)
         lhs, rhs = cov.createVecs()
@@ -452,7 +459,6 @@ class InversionND(object):
         sol = rhs
         sol.setArray(misfit)
         sol *= lhs
-        sol.scale(0.5)
 
         ksp.destroy()
         lhs.destroy()

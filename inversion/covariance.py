@@ -26,7 +26,7 @@ def gaussian(sigma, distance, length_scale):
     """
     return sigma**2 * np.exp(-distance**2/(2.0*length_scale**2))
 
-def create_covariance_matrix(sigma, coords, max_dist, func, *args):
+def create_covariance_matrix(sigma, coords, max_dist, func, *args, **kwargs):
     """
     Create a covariance matrix based on distance.
     Euclidean distance between a set of points is queried from a KDTree
@@ -40,6 +40,7 @@ def create_covariance_matrix(sigma, coords, max_dist, func, *args):
      func     : covariance function (default is Gaussian)
         (pass a length parameter if using default)
      args     : arguments to pass to func
+     kwargs   : keyword arguments to pass to func
 
     Returns
     -------
@@ -75,7 +76,7 @@ def create_covariance_matrix(sigma, coords, max_dist, func, *args):
         
         row = i
         col = idx
-        val = func(sigma[idx], dist, *args)
+        val = func(sigma[idx], dist, *args, **kwargs)
         
         mat.setValues(row, col, val)
 
