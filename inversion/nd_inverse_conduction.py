@@ -341,9 +341,8 @@ class InversionND(object):
             mat : covariance matrix
         """
 
-        def gaussian_fn(sigma_x0, dist, *args):
-            L = max(1e-12, dist.max() - dist.min()) # length scale
-            return sigma_x0**2 * np.exp(-dist**2/(2*L**2))
+        def gaussian_fn(sigma_x0, dist, length_scale):
+            return sigma_x0**2 * np.exp(-dist**2/(2*length_scale**2))
 
         if type(fn) == type(None):
             fn = gaussian_fn
@@ -396,7 +395,8 @@ class InversionND(object):
         nnz = np.bincount(row)
         indptr = np.insert(np.cumsum(nnz),0,0)
 
-        mat = self.mesh._initialise_matrix()
+        nnz = (stencil_width, dim*2)
+        mat = self.mesh._initialise_matrix(nnz=nnz)
         mat.assemblyBegin()
         mat.setValuesLocalCSR(indptr.astype(PETSc.IntType), col, val)
         mat.assemblyEnd()

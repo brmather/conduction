@@ -19,6 +19,9 @@ try: range=xrange
 except: pass
 
 import numpy as np
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
 
 def gaussian(sigma, distance, length_scale):
     """
@@ -59,11 +62,15 @@ def create_covariance_matrix(sigma, coords, max_dist, func, *args, **kwargs):
 
     size = len(sigma)
 
+    # find distance between coords and centroid
+    dist = np.linalg.norm(coords - coords.mean(axis=0), axis=1)
+    nnz = int(1.5*(dist <= max_dist).sum())
+
     # set up matrix
-    mat = PETSc.Mat().create()
-    mat.setType(mat.Type.AIJ)
+    mat = PETSc.Mat().create(comm)
+    mat.setType('aij')
     mat.setSizes((size, size))
-    mat.setPreallocationNNZ((size,1))
+    mat.setPreallocationNNZ((nnz,1))
     mat.setFromOptions()
     mat.assemblyBegin()
 
