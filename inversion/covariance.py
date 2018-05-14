@@ -71,6 +71,7 @@ def create_covariance_matrix(sigma, coords, max_dist, func, *args, **kwargs):
     mat.setType('aij')
     mat.setSizes((size, size))
     mat.setPreallocationNNZ((nnz,1))
+    mat.setOption(PETSc.Mat.Option.NEW_NONZERO_ALLOCATION_ERR, 0)
     mat.setFromOptions()
     mat.assemblyBegin()
 
