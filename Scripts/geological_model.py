@@ -1,34 +1,43 @@
-
 # coding: utf-8
 
-# # Geological model
-# 
+## Geological model
 # Assemble the geological model from xyz data for each surface.
 
-nonlinear = True
-
-
 import numpy as np
+import argparse
+import conduction
+from time import time
+import os
 
 from scipy.spatial import cKDTree
-from scipy.interpolate import RegularGridInterpolator, SmoothBivariateSpline, RectBivariateSpline
-import conduction
-from time import clock
+from scipy.interpolate import RectBivariateSpline
 
 from petsc4py import PETSc
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
 
-def solve(self, solver='bcgs'):
+parser = argparse.ArgumentParser(description='Process some model arguments.')
+parser.add_argument('--nonlinear', required=False, action='store_true', default=False, help='Nonlinear solver')
+parser.add_argument('echo', type=str, metavar='PATH', help='Input folder location')
+args = parser.parse_args()
+
+
+try: range=xrange
+except: pass
+
+
+def solve(self, matrix=None, rhs=None, solver='bcgs'):
     """
     Construct the matrix A and vector b in Ax = b
     and solve for x
 
     GMRES method is default
     """
-    matrix = self.mat
-    rhs = self.rhs
+    if type(matrix) == type(None):
+        matrix = self.construct_matrix()
+    if type(rhs) is type(None):
+        rhs = self.construct_rhs()
     res = self.temperature
 
     ksp = PETSc.KSP().create(comm=comm)
@@ -42,37 +51,91 @@ def solve(self, solver='bcgs'):
     # We should hand this back to local vectors
     return res[:]
 
+def hofmeister1999(k0, T):
+    a = 2.85e-5
+    b = 1.008e-8
+    c = -0.384
+    d = 0.0
 
-def hofmeister1999(k0, T, a, c):
-    return k0*(298.0/T)**a + c*T**3
+    k_con  = k0*(298.0/T)**0.45
+    k_rad  = 0.0175 - 1.0374e-4*T + 2.245*T**2/1e7 - 3.407*T**3/1e11
+    k_pres = 1.0 + (K_0p*g_av*3350.0*np.abs(mesh.coords[:,2])*1e-9)/K_T
+    k_exp  = np.exp(-(a*(T - 298.0) + b*0.5*(T**2 - 88804.0) + \
+                     c*(3.3557e-3 - 1.0/T) + d*(T**5 - 2.35e12)/5.0)* \
+                     (gmma_T*4 + 1.0/3))
+    k_new = k_con*k_exp*k_pres + k_rad
+    k_new[grun_mask] = k0[grun_mask]
+    k_new[kmask] = k0[kmask]
+    return k_new
 
 def nonlinear_conductivity(self, k0, tolerance):
+    rhs = self.rhs
     k = k0.copy()
-    self.construct_matrix()
+    self.diffusivity[:] = k
 
     error = np.array(10.0)
     i = 0
-    t = clock()
 
     while (error > tolerance):
+        t = time()
         k_last = self.diffusivity[:].copy()
-        self.diffusivity[:] = k
-        self.construct_matrix()
 
-        T = solve(self)
-        k = hofmeister1999(k0, T, a, c)
+        mat = self.construct_matrix()
+        T = solve(self, matrix=mat, rhs=rhs)
+        k = hofmeister1999(k0, T)
+        self.diffusivity[:] = k
 
         err = np.absolute(k - k_last).max()
         comm.Allreduce([err, MPI.DOUBLE], [error, MPI.DOUBLE], op=MPI.MAX)
         i += 1
-
         if comm.rank == 0:
-            print("{} iterations in {} seconds, residual = {}".format(i, clock()-t, error))
+            print("iteration {} in {:.3f} seconds, residual = {:.2e}".format(i, time()-t, float(error)))
+
+def query_nearest(l):
+    """
+    Need to be careful in parallel -
+     can't have a processor filling in a region off-processor
+     (although it appears the shadow zones save us here)
+
+    """
+    layer_mask.fill(0)
+    
+    zq = spl[l].ev(yq, xq)
+    d, idx = tree.query(np.column_stack([xq, yq, zq]))
+    layer_mask[idx] = True
+    
+    return np.where(layer_mask.reshape(nz,ny,nx))
+
+def map_properties(self, lithology, lithology_index, *args):
+    """
+    Requires a tuple of vectors corresponding to an inversion variable
+    these are mapped to the mesh.
+
+    tuple(vec1, vec2, vecN) --> tuple(field1, field2, fieldN)
+    """
+    nf = len(args)
+    nl = len(lithology_index)
+
+    # preallocate memory
+    mesh_variables = np.zeros((nf, lithology.size))
+
+    # unpack vector to field
+    for i in range(nl):
+        idx = lithology == lithology_index[i]
+        for f in range(nf):
+            mesh_variables[f,idx] = args[f][i]
+
+    # create MeshVariable to sync fields across processors
+    var = self.create_meshVariable("dummy")
+    for f in range(nf):
+        var[:] = mesh_variables[f]
+        mesh_variables[f] = var[:].copy()
+
+    return list(mesh_variables)
 
 
-directory = '/opt/ben/'
-
-layer_attributes = np.loadtxt(directory+'layers.info', skiprows=1, usecols=(2,3,4,5,6,7,8,9,10))
+directory = args.echo
+layer_attributes = np.loadtxt(directory+'layers.info', skiprows=1, usecols=list(range(2,11)))
 layer_number = np.loadtxt(directory+'layers.info', dtype=int, skiprows=1, usecols=(0,))
 layer_name   = np.loadtxt(directory+'layers.info', dtype=str, skiprows=1, usecols=(1,))
 
@@ -80,54 +143,43 @@ layer_header = ['body number', 'density', 'alpha', 'thermal conductivity', 'heat
                 'pressure coefficient', 'Gruneisen parameter', 'pressure derivative of bulk modulus', 'man']
 
 
-layer = dict()
-for i in xrange(0, 10):
-    data = np.loadtxt(directory+'layers_xy/layer{}.xyz'.format(i))
-    layer[i] = data
+# count layers
+nl = 0
+for layer in os.listdir(directory+'layers_xy'):
+    if layer.endswith('.xyz'):
+        nl += 1
 
+spl = dict()
+for l in range(nl):
+    data = np.loadtxt(directory+'layers_xy/layer{}.xyz'.format(l))
+    xl = data[:,0]
+    yl = data[:,1]
 
-Xcoords = np.unique(data[:,0])
-Ycoords = np.unique(data[:,1])
+    Xcoords = np.unique(xl)
+    Ycoords = np.unique(yl)
+    nx, ny = Xcoords.size, Ycoords.size
 
-nx, ny = Xcoords.size, Ycoords.size
+    zl = data[:,2].reshape(ny,nx)
+    spl[l] = RectBivariateSpline(Ycoords, Xcoords, zl)
 
-
-
-minX, minY, minZ = data.min(axis=0)
-maxX, maxY, maxZ = data.max(axis=0)
-
-# minZ = -400e3
-minZ = -130e3
-maxZ = 600.0
+# Overwrite model extents
+minX, maxX = 350000.0, 788000.0
+minY, maxY = 480000.0, 1000000.0
+minZ, maxZ = -130e3, 600.0
 
 if comm.rank == 0:
     print("min/max:\n x {}\n y {}\n z {}".format((minX, maxX),
                                                  (minY, maxY),
                                                  (minZ, maxZ)))
 
-
-spl = dict()
-
-for i in xrange(10):
-    data = layer[i]
-    xl = data[:,0]
-    yl = data[:,1]
-    zl = data[:,2].reshape(ny,nx)
-    spl[i] = RectBivariateSpline(Ycoords, Xcoords, zl)
-
-
 ## Setup the hexahedral mesh
 
-Nx, Ny, Nz = 220, 220, 410
+Nx, Ny, Nz = 102, 102, 408
 
 mesh = conduction.ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (Nx, Ny, Nz))
 
 coords = mesh.coords
-
-Xcoords = np.unique(coords[:,0])
-Ycoords = np.unique(coords[:,1])
-Zcoords = np.unique(coords[:,2])
-
+Xcoords, Ycoords, Zcoords = mesh.grid_coords
 nx, ny, nz = Xcoords.size, Ycoords.size, Zcoords.size
 
 
@@ -145,34 +197,13 @@ horizontal_slice = np.column_stack([xq, yq])
 layer_voxel = np.zeros((nz, ny, nx), dtype=np.int8)
 layer_mask = np.zeros(nx*ny*nz, dtype=bool)
 
-# create KDTree
 tree = cKDTree(coords)
-
-
-def query_nearest(l):
-    """
-    Need to be careful in parallel -
-     can't have a processor filling in a region off-processor
-     (although it appears the shadow zones save us here)
-
-    """
-    layer_mask.fill(0)
-    
-    zq = spl[l].ev(yq, xq)
-    d, idx = tree.query(np.column_stack([xq, yq, zq]))
-    layer_mask[idx] = True
-    
-    return np.where(layer_mask.reshape(nz,ny,nx))
-
 layer_voxel.fill(-1)
 
-
-for l in xrange(0,10):
+for l in range(nl):
     i0, j0, k0 = query_nearest(l)
-
-    for i in xrange(i0.size):
+    for i in range(i0.size):
         layer_voxel[:i0[i], j0[i], k0[i]] = l+1
-
     if comm.rank == 0:
         print("mapped layer {}".format(l))
 
@@ -182,27 +213,29 @@ for l in xrange(0,10):
 # layer_voxel = layer_voxel[:,::-1,:]
 
 
-# Now map properties to these layers. Where these layers are not defined we have a default value assigned to them.
+# map properties
+rho, alpha, k0, H, beta, gmma_T, K_0p, K_T, man = map_properties(mesh, layer_voxel.ravel(), layer_number,\
+                                                                 *layer_attributes.T)
+grun_mask = gmma_T == 0
+K_T[K_T == 0] = 1e99
 
-k = np.ones_like(layer_voxel, dtype=np.float32)*3
-H = np.zeros_like(layer_voxel, dtype=np.float32)
-
-for i, l in enumerate(layer_number):
-    name = layer_name[i]
-    mask = layer_voxel == l
-    ki = layer_attributes[i,2]
-    Hi = layer_attributes[i,3]
-    k[mask] = ki
-    H[mask] = Hi
-    if comm.rank == 0:
-        print('{} {:20} \t k = {}, H = {}'.format(l, name, ki, Hi))
-    
-
-k = k.ravel()
-H = H.ravel()
 
 # Update properties
-mesh.update_properties(k, H)
+mesh.update_properties(k0, H)
+
+# gravity constants
+g_s = 9.81
+g_400 = 9.97
+depth = abs(minZ)
+d_gz = (g_400 - g_s)/400e3
+g_av = g_s + d_gz*depth*0.5 # Average gravity attraction for the thermal calculation
+
+kmask = k0 == 0.0
+
+# we differentiate air and asthenosphere by 20km depth
+air_mask = np.logical_and(kmask, mesh.coords[:,2]>-20e3)
+lab_mask = np.logical_and(kmask, mesh.coords[:,2]<-20e3)
+
 
 
 # Boundary conditions
@@ -213,44 +246,35 @@ mesh.boundary_condition('maxZ', topBC, flux=False)
 mesh.boundary_condition('minZ', bottomBC, flux=False)
 
 
-# Make the top and bottom BC conform to geometry
-air_mask = (layer_voxel == 0).ravel()
-lab_mask = (layer_voxel > 8).ravel()
-
 air_idx = np.nonzero(air_mask)[0].astype(np.int32)
 lab_idx = np.nonzero(lab_mask)[0].astype(np.int32)
 
 
-mesh.construct_rhs()
+# Manually overwrite Dirichlet BCs
+rhs = mesh.construct_rhs()
 mesh.dirichlet_mask[air_idx] = True
 mesh.dirichlet_mask[lab_idx] = True
 
-mesh.rhs[air_idx] = np.ones(air_idx.size)*topBC
-mesh.rhs[lab_idx] = np.ones(lab_idx.size)*bottomBC
+rhs[air_idx] = np.ones(air_idx.size)*topBC
+rhs[lab_idx] = np.ones(lab_idx.size)*bottomBC
 
 
 # initial guess x0
-mesh.temperature[:] = mesh.rhs[:].copy()
+mesh.temperature[:] = rhs[:].copy()
 
 
-if not nonlinear:
-    t = clock()
-    sol = solve(mesh)
+if not args.nonlinear:
+    t = time()
+    mat = mesh.construct_matrix()
+    sol = solve(mesh, matrix=mat, rhs=rhs)
     if comm.rank == 0:
-        print("linear solve time {} s".format(clock() -t))
-
+        print("linear solve time {} s".format(time() -t))
     H5_file = 'geological_model.h5'
-
 
 else:
     ## Nonlinear conductivity
-
-    a = 0.33
-    c = 1e-10
     k0 = mesh.diffusivity[:].copy()
-
     nonlinear_conductivity(mesh, k0, 1e-5)
-
     H5_file = 'geological_model_nonlinear.h5'
 
 
