@@ -19,6 +19,7 @@ comm = MPI.COMM_WORLD
 
 parser = argparse.ArgumentParser(description='Process some model arguments.')
 parser.add_argument('--nonlinear', required=False, action='store_true', default=False, help='Nonlinear solver')
+parser.add_argument('--gravity', required=False, action='store_true', default=False, help='Gravity solver')
 parser.add_argument('echo', type=str, metavar='PATH', help='Input folder location')
 args = parser.parse_args()
 
@@ -277,10 +278,8 @@ else:
     nonlinear_conductivity(mesh, k0, 1e-5)
     H5_file = 'geological_model_nonlinear.h5'
 
-
 # Calculate heat flow
-qx, qy, qz = mesh.heatflux()
-
+qz, qy, qx = mesh.heatflux()
 
 # Save to H5 file
 mesh.save_mesh_to_hdf5(H5_file)
@@ -293,5 +292,37 @@ mesh.save_field_to_hdf5(H5_file,\
 mesh.save_vector_to_hdf5(H5_file,\
                          heat_flux_vector=(qx*1e3,qy*1e3,qz*1e3),\
                          heat_flux_vector_lateral=(qx*1e3,qy*1e3,np.zeros_like(qz)))
+
+
+if args.gravity:
+    gamma = 6.67408e-11
+
+    t = time()
+    mesh.mat.destroy() # save some memory
+    phi = np.ones(mesh.nn)
+    rvec = -rho*gamma*4.0*np.pi
+    mesh.update_properties(phi, rvec)
+
+    for boundary in ['minZ', 'maxZ', 'minY', 'maxY', 'minX', 'maxX']:
+        mesh.boundary_condition(boundary, 0.0, flux=False)
+
+    # mesh.dirichlet_mask[air_idx] = True
+    # mesh.dirichlet_mask[lab_idx] = True
+    # rhs[air_idx] = np.zeros(air_idx.size)
+    # rhs[lab_idx] = np.zeros(lab_idx.size)
+
+    mat = mesh.construct_matrix(in_place=False)
+    rhs = mesh.construct_rhs()
+    sol = solve(mesh, matrix=mat, rhs=rhs, solver='gmres')
+    if comm.rank == 0:
+        print("gravity solve time {} s".format(time() -t))
+
+    # calculate gradient
+    gz, gy, gx = mesh.gradient(sol)
+
+    # Save to H5 file
+    mesh.save_vector_to_hdf5(H5_file, gravity_vector=(gx, gy, gz))
+
+
 if comm.rank == 0:
     conduction.generateXdmf(H5_file)
