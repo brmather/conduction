@@ -28,7 +28,17 @@ try: range=xrange
 except: pass
 
 
-def solve(self, matrix=None, rhs=None, solver='bcgs'):
+def initialise_ksp(matrix, solver='bcgs'):
+    ksp = PETSc.KSP().create(comm=comm)
+    ksp.setType(solver)
+    ksp.setOperators(matrix)
+    # pc = ksp.getPC()
+    # pc.setType('gamg')
+    ksp.setTolerances(1e-10, 1e-50)
+    ksp.setFromOptions()
+    return ksp
+
+def solve(self, ksp, matrix=None, rhs=None):
     """
     Construct the matrix A and vector b in Ax = b
     and solve for x
@@ -40,14 +50,6 @@ def solve(self, matrix=None, rhs=None, solver='bcgs'):
     if type(rhs) is type(None):
         rhs = self.construct_rhs()
     res = self.temperature
-
-    ksp = PETSc.KSP().create(comm=comm)
-    ksp.setType(solver)
-    ksp.setOperators(matrix)
-    # pc = ksp.getPC()
-    # pc.setType('gamg')
-    ksp.setFromOptions()
-    ksp.setTolerances(1e-10, 1e-50)
     ksp.solve(rhs._gdata, res._gdata)
     # We should hand this back to local vectors
     return res[:]
@@ -73,6 +75,8 @@ def nonlinear_conductivity(self, k0, tolerance):
     rhs = self.rhs
     k = k0.copy()
     self.diffusivity[:] = k
+    mat = self.construct_matrix()
+    ksp = initialise_ksp(mat)
 
     error = np.array(10.0)
     i = 0
@@ -82,7 +86,7 @@ def nonlinear_conductivity(self, k0, tolerance):
         k_last = self.diffusivity[:].copy()
 
         mat = self.construct_matrix()
-        T = solve(self, matrix=mat, rhs=rhs)
+        T = solve(self, ksp, matrix=mat, rhs=rhs)
         k = hofmeister1999(k0, T)
         self.diffusivity[:] = k
 
@@ -267,7 +271,8 @@ mesh.temperature[:] = rhs[:].copy()
 if not args.nonlinear:
     t = time()
     mat = mesh.construct_matrix()
-    sol = solve(mesh, matrix=mat, rhs=rhs)
+    ksp = initialise_ksp(mat)
+    sol = solve(mesh, ksp, matrix=mat, rhs=rhs)
     if comm.rank == 0:
         print("linear solve time {} s".format(time() -t))
     H5_file = 'geological_model.h5'
@@ -313,7 +318,8 @@ if args.gravity:
 
     mat = mesh.construct_matrix(in_place=False)
     rhs = mesh.construct_rhs()
-    sol = solve(mesh, matrix=mat, rhs=rhs, solver='gmres')
+    ksp = initialise_ksp(mat, solver='gmres')
+    sol = solve(mesh, ksp, matrix=mat, rhs=rhs)
     if comm.rank == 0:
         print("gravity solve time {} s".format(time() -t))
 

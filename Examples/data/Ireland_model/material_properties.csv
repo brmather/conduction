@@ -1,0 +1,19 @@
+LITHOLOGY,INDEX,K,K_ERROR,H,H_ERROR,NOTES
+Donegal Granite 1,1,3.5,0.5,0.0000019,0.0000002,split layer 1 from Javier model
+Donegal Granite 2,2,3.5,0.5,0.0000019,0.0000002,split layer 1 from Javier model
+Galway Granite,3,3.5,0.5,0.0000028,0.0000004,split layer 1 from Javier model
+Leinster Granite,4,3.5,0.5,0.0000023,0.0000004,split layer 1 from Javier model
+Granite,5,3.5,0.5,0.000002,0.0000008,split layer 1 from Javier model
+Cenozoic volcanics,6,1.5968017234,0.2497687166,0.0000001,0.0000001,mafic volc (layer 2) from Javier model
+Upper Carboniferous sediments,7,2.9799206362,0.4478812638,0.0000024,0.0000004,basement depth reference
+Lower Carboniferous sediments,8,2.8021015538,0.109958918,0.0000007,0.0000003,basement depth reference
+Devonian sediments,9,3.2555459348,0.8233368365,0.0000017,0.0000003,basement depth reference
+Silurian sediments,10,2.6111111111,0.3300547093,0.0000015,0.0000003,basement depth reference
+Ordovician volcanics,11,1.8156423335,0.1166716161,0.0000015,0.0000003,basement depth reference
+Dalradian Supergroup,12,3.5,1,0.0000014,0.0000002,upper crust reference Ð layer 3 from Javier model
+Proterozoic Basement,13,3.5,1,0.0000014,0.0000002,upper crust reference Ð layer 3 from Javier model
+Lower crust,14,4,1,0.0000001,0.0000001,lower crust (layer 4) from Javier model
+Leinster lithospheric mantle,15,5.3,1,0.0000001,0.0000001,Leinster (layer 5) from Javier model
+Mid-Valley lithospheric mantle,16,5.3,1,0.0000001,0.0000001,Mid-Valley (layer 6) from Javier model
+Connemara lithospheric mantle,17,5.3,1,0.0000001,0.0000001,Connemara (layer 7) from Javier model
+Grampian lithospheric mantle,18,5.3,1,0.0000001,0.0000001,Grampian (layer 8) from Javier model
