@@ -303,13 +303,13 @@ if args.gravity:
     rvec = -rho*gamma*4.0*np.pi
     mesh.update_properties(phi, rvec)
 
-    for boundary in ['minZ', 'maxZ', 'minY', 'maxY', 'minX', 'maxX']:
+    for boundary in mesh.bc.keys():
         mesh.boundary_condition(boundary, 0.0, flux=False)
 
     # mesh.dirichlet_mask[air_idx] = True
     # mesh.dirichlet_mask[lab_idx] = True
-    # rhs[air_idx] = np.zeros(air_idx.size)
-    # rhs[lab_idx] = np.zeros(lab_idx.size)
+    rhs[air_idx] = np.zeros(air_idx.size)
+    rhs[lab_idx] = np.zeros(lab_idx.size)
 
     mat = mesh.construct_matrix(in_place=False)
     rhs = mesh.construct_rhs()
@@ -321,7 +321,7 @@ if args.gravity:
     gz, gy, gx = mesh.gradient(sol)
 
     # Save to H5 file
-    mesh.save_vector_to_hdf5(H5_file, gravity_vector=(gx, gy, gz))
+    mesh.save_field_to_hdf5(H5_file, gravity=gz)
 
 
 if comm.rank == 0:

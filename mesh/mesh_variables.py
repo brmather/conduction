@@ -34,6 +34,10 @@ class MeshVariable(object):
 
         self.size = self._ldata.getSizes()[0]
 
+    def __delete__(self):
+        self._ldata.destroy()
+        self._gdata.destroy()
+
     def __getitem__(self, pos):
         self._dm.globalToLocal(self._gdata, self._ldata)
         return self._ldata[pos]
@@ -76,4 +80,4 @@ class MeshVariable(object):
         return self._gdata
 
     def getLocal(self):
-        return self.data
+        return self._ldata

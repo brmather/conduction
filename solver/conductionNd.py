@@ -110,6 +110,16 @@ class ConductionND(object):
         self.rhs = MeshVariable('rhs', dm)
 
 
+    def __delete__(self):
+
+        del self.rhs, self.diffusivity, self.heat_sources, self.temperature
+        self.mat.destroy()
+        self.dm.destroy()
+        self.lvec.destroy()
+        self.gvec.destroy()
+        self.lgmap.destroy()
+
+
     def _initialise_COO_vectors(self, pad=1):
 
         nn = self.nn
