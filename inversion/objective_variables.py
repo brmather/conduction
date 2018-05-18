@@ -46,12 +46,16 @@ class InvObservation(object):
 
         # self.gweight = self.ghost_weights()
 
+    def __delete__(self):
+        if type(self.cov) != type(None):
+            self.cov.destroy()
+
     def construct_covariance_matrix(self, max_dist, func=gaussian_function, *args, **kwargs):
         """
         Construct a covariance matrix based on the uncertainty
         of the data and a distance scale.
 
-        See inversion.covariance.create_covariance_matrix for more.
+        See inversion.covariance.create_covariance_matrix for details.
 
         Arguments
         ---------
@@ -84,20 +88,40 @@ class InvPrior(object):
 
     Arguments
     ---------
-     label      : label to give prior
-     prior      : prior
-     prior_err  : prior uncertainty
-     cov_mat    : prior covariance matrix
-                  (optional) uses the l2-norm otherwise
+     label        : label to give prior
+     prior        : prior
+     prior_err    : prior uncertainty
+     prior_coords : prior coordinates
+                    (optional) ndarray shape(n, dim)
+     cov_mat      : prior covariance matrix
+                    (optional) uses the l2-norm otherwise
     """
-    def __init__(self, prior, prior_err, cov_mat=None):
+    def __init__(self, prior, prior_err, prior_coords=None, cov_mat=None):
 
         self.v = prior
         self.dv = prior_err
+        self.coords = prior_coords
         self.cov = cov_mat
         # self.gweight = 1.0
 
-        # self.label = str(label)
+    def __delete__(self):
+        if type(self.cov) != type(None):
+            self.cov.destroy()
 
-    def construct_covariance_matrix(self, max_dist, func, *args):
-        raise NotImplementedError("On the bucket list")
+    def construct_covariance_matrix(self, max_dist, func=gaussian_function, *args, **kwargs):
+        """
+        Construct a covariance matrix based on the uncertainty
+        of the prior and a distance scale.
+
+        See inversion.covariance.create_covariance_matrix for details.
+
+        Arguments
+        ---------
+         max_dist : maximum radius to search for points
+         func     : covariance function (default is Gaussian)
+            (pass a length parameter if using default)
+         args     : arguments to pass to func
+         kwargs   : keyword arguments to pass to func
+        """
+        sigma = self.dv
+        self.cov = covariance_matrix(sigma, self.coords, max_dist, func, *args, **kwargs)
