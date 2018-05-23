@@ -33,23 +33,11 @@ comm = MPI.COMM_WORLD
 
 class InversionND(object):
 
-    def __init__(self, lithology, mesh, **kwargs):
+    def __init__(self, lithology, mesh, lithology_index=None, **kwargs):
         self.mesh = mesh
-        lithology = np.array(lithology).ravel()
-
-        # communicate lithology index
-        lithology_index = np.unique(lithology)
-        lith_min = np.array(lithology_index.min(), dtype=np.int32)
-        lith_max = np.array(lithology_index.max(), dtype=np.int32)
-        all_lith_min = np.array(0, dtype=np.int32)
-        all_lith_max = np.array(0, dtype=np.int32)
-        comm.Allreduce([lith_min, MPI.INT], [all_lith_min, MPI.INT], op=MPI.MIN)
-        comm.Allreduce([lith_max, MPI.INT], [all_lith_max, MPI.INT], op=MPI.MAX)
-
 
         # update internal mask structures
-        self.lithology_index = np.arange(all_lith_min, all_lith_max+1)
-        self.update_lithology(lithology)
+        self.update_lithology(lithology, lithology_index)
 
 
         # Custom linear / nearest-neighbour interpolator
@@ -76,7 +64,7 @@ class InversionND(object):
         self.grid_delta = delta
 
 
-        # Cost function variables
+        # objective function dictionaries
         self.observation = {}
         self.prior = {}
 
@@ -92,23 +80,50 @@ class InversionND(object):
         self.iii = 0
 
 
-    def update_lithology(self, new_lithology):
+    def update_lithology(self, new_lithology, lithology_index=None):
         """
-        Update the configuration of lithologies
+        Update the configuration of lithologies.
 
         Internal mask structures are updated to reflect the change in
-        lithology configuration
+        lithology configuration.
+
+        Arguments
+        ---------
+         new_lithology   : field on the mesh with integers indicating
+            : the position of particular lithologies
+         lithology_index : array corresponding to the total number of
+            : integers in new_lithology
+        
+        Notes
+        -----
+         lithology_index is determined from the min/max of elements
+         in new_lithology if lithology_index=None
         """
 
         new_lithology = np.array(new_lithology).ravel()
 
-        nl = len(self.lithology_index)
+        # sync across processors
+        new_lithology = self.mesh.sync(new_lithology)
+        new_lithology = new_lithology.astype(np.int)
+
+        if type(lithology_index) == type(None):
+            # query global vector for minx/max
+            iloc, lith_min = self.mesh.gvec.min()
+            iloc, lith_max = self.mesh.gvec.max()
+
+            # create lithology index
+            lithology_index = np.arange(int(lith_min), int(lith_max)+1)
+
+
+        nl = len(lithology_index)
         lithology_mask = [i for i in range(nl)]
 
-        for i, index in enumerate(self.lithology_index):
+        # create lithology mask
+        for i, index in enumerate(lithology_index):
             lithology_mask[i] = np.nonzero(new_lithology == index)[0]
 
         self.lithology_mask = lithology_mask
+        self.lithology_index = lithology_index
         self._lithology = new_lithology
 
         return
@@ -477,7 +492,7 @@ class InversionND(object):
         nf = len(args)
         nl = len(self.lithology_index)
 
-        # preallocate memory
+        # preallocate local memory
         mesh_variables = np.zeros((nf, self.mesh.nn))
 
         # unpack vector to field
@@ -485,6 +500,10 @@ class InversionND(object):
             idx = self.lithology_mask[i]
             for f in range(nf):
                 mesh_variables[f,idx] = args[f][i]
+
+        # sync fields across processors
+        for f in range(nf):
+            mesh_variables[f] = self.mesh.sync(mesh_variables[f])
 
         return list(mesh_variables)
 
@@ -496,13 +515,18 @@ class InversionND(object):
         nf = len(args)
         nl = len(self.lithology_index)
 
+        # sync fields across processors
+        mesh_variables = np.zeros((nf, self.mesh.nn))
+        for f in range(nf):
+            mesh_variables[f] = self.mesh.sync(args[f])
+
         lith_variables = np.zeros((nf, self.lithology_index.size))
         all_lith_variables = np.zeros_like(lith_variables)
 
         for i in range(0, nl):
             idx = self.lithology_mask[i]
             for f in range(nf):
-                lith_variables[f,i] += (args[f]/self.ghost_weights)[idx].sum()
+                lith_variables[f,i] += (mesh_variables[f]/self.ghost_weights)[idx].sum()
 
         comm.Allreduce([lith_variables, MPI.DOUBLE], [all_lith_variables, MPI.DOUBLE], op=MPI.SUM)
 
