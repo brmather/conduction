@@ -482,7 +482,8 @@ class InversionND(object):
         lhs, rhs = cov.createVecs()
         rhs.set(1.0)
         ksp.solveTranspose(rhs, lhs)
-        sol = rhs
+
+        sol = rhs.duplicate()
         sol.set(0.0)
         lindices = np.arange(0, misfit.size, dtype=PETSc.IntType)
         sol.setValues(lindices, misfit, PETSc.InsertMode.ADD_VALUES)

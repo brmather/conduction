@@ -24,9 +24,8 @@ comm = MPI.COMM_WORLD
 
 
 parser = argparse.ArgumentParser(description='Process some model arguments.')
-parser.add_argument('-i', type=str, metavar='PATH', help='Input directory')
-parser.add_argument('-o', type=str, metavar='PATH', help='Output file path')
 parser.add_argument('--log', required=False, action='store_true', default=False, help='Log the adjoint solves')
+parser.add_argument('echo', type=str, metavar='PATH', help='Output file path')
 args = parser.parse_args()
 
 try: range=xrange
@@ -106,9 +105,6 @@ def forward_model(x, self, bc='Z'):
      cost : scalar
 
     """
-    def hofmeister1999(k0, T, a=0.25, c=0.0):
-        return k0*(298.0/T)**a + c*T**3
-
     k_list, H_list = np.array_split(x[:-1], 2)
     Tb = x[-1]
     
@@ -132,7 +128,7 @@ def forward_model(x, self, bc='Z'):
         err = np.absolute(k - k_last).max()
         comm.Allreduce([err, MPI.DOUBLE], [error, MPI.DOUBLE], op=MPI.MAX)
         i += 1
-        
+    
     q = self.heatflux(T, k)
     delT = self.gradient(T)
     
@@ -260,10 +256,10 @@ def adjoint_model(x, self, bc='Z'):
     return cost, dx
 
 
-
-layer_attributes = np.loadtxt(args.i+'layers.info', skiprows=1, usecols=list(range(2,11)))
-layer_number = np.loadtxt(args.i+'layers.info', dtype=int, skiprows=1, usecols=(0,))
-layer_name   = np.loadtxt(args.i+'layers.info', dtype=str, skiprows=1, usecols=(1,))
+directory = '../data/Ireland_model/'
+layer_attributes = np.loadtxt(directory+'layers.info', skiprows=1, usecols=list(range(2,11)))
+layer_number = np.loadtxt(directory+'layers.info', dtype=int, skiprows=1, usecols=(0,))
+layer_name   = np.loadtxt(directory+'layers.info', dtype=str, skiprows=1, usecols=(1,))
 
 layer_header = ['body number', 'density', 'alpha', 'thermal conductivity', 'heat production rate',\
                 'pressure coefficient', 'Gruneisen parameter', 'pressure derivative of bulk modulus', 'man']
@@ -271,13 +267,13 @@ layer_header = ['body number', 'density', 'alpha', 'thermal conductivity', 'heat
 
 # count layers
 nl = 0
-for layer in os.listdir(args.i+'layers_xy'):
+for layer in os.listdir(directory+'layers_xy'):
     if layer.endswith('.xyz'):
         nl += 1
 
 spl = dict()
 for l in range(nl):
-    data = np.loadtxt(args.i+'layers_xy/layer{}.xyz'.format(l))
+    data = np.loadtxt(directory+'layers_xy/layer{}.xyz'.format(l))
     xl = data[:,0]
     yl = data[:,1]
 
@@ -334,7 +330,7 @@ for l in range(nl):
         print(" mapped layer {}".format(l))
 
 
-inv = conduction.InversionND(layer_voxel, mesh, lithology_index=layer_number)
+inv = conduction.InversionND(layer_voxel, mesh, lithology_index=layer_number) # solver="bcgs"
 inv.nIter = 0
 
 # map properties to mesh
@@ -370,7 +366,7 @@ mesh.boundary_condition('minZ', bottomBC, flux=False)
 
 
 ## Priors
-mat = np.loadtxt(args.i + 'material_properties.csv', delimiter=',', usecols=(0,1,2,3,4,5), dtype=str, skiprows=1)
+mat = np.loadtxt(directory + 'material_properties.csv', delimiter=',', usecols=(0,1,2,3,4,5), dtype=str, skiprows=1)
 mat_name = mat[:,0]
 mat_ID   = mat[:,1].astype(int)
 mat_k    = mat[:,2:4].astype(float)
@@ -392,18 +388,19 @@ inv.add_prior(k=kp, H=Hp, Tb=Tbp)
 
 
 ## Observations
-HF_file = "/opt/ben/Dropbox/GOTherm/data/ireland_heat_flow_proj.csv"
-ireland_HF = np.loadtxt(HF_file, delimiter=',', usecols=(2,3,4,9,10), skiprows=1)
+HF_file = directory + "ireland_heat_flow_proj.csv"
+ireland_HF = np.loadtxt(HF_file, delimiter=',', usecols=(2,3,4,11,12), skiprows=1)
 qmask = ireland_HF[:,4] != 0
 eire_HF  = ireland_HF[qmask,3] * 1e-3
 eire_dHF = ireland_HF[qmask,4] * 1e-3
 eire_xyz = ireland_HF[qmask,0:3]
+eire_xyz[:,2] = -400.0
 
 qobs = InvObservation(eire_HF, eire_dHF, eire_xyz)
 inv.add_observation(q=qobs)
 
 
-curie_file = "/opt/ben/git/conduction/Examples/data/Li_2017_curiedepth_ireland.txt"
+curie_file = directory + "Li_2017_curiedepth_ireland.txt"
 cpd = np.loadtxt(curie_file, skiprows=1)
 cpd_xyz = cpd[:,:3]
 cpd_xyz[:,2] *= -1
