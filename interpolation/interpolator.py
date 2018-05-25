@@ -157,8 +157,8 @@ class KDTreeInterpolator(object):
             bounds[mask] = True
             
         return idx, d, bounds
-            
-    
+
+
     @property
     def values(self):
         return self._values

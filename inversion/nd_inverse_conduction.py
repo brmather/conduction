@@ -324,7 +324,9 @@ class InversionND(object):
                 if obs.cov is None:
                     dcdinterp = self.objective_function_ad(ival, obs.v, obs.dv)
                 else:
-                    dcdinterp = self.objective_function_lstsq_ad(ival, obs.v, obs.cov)
+                    dcdinterp = self.objective_function_lstsq_ad(ival*obs.w, obs.v*obs.w, obs.cov)
+                    # lgmap = obs.cov.getLGMap()
+                    # lgmap.applyInverse()
 
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
@@ -434,6 +436,12 @@ class InversionND(object):
         self.ndinterp.values = field #.reshape(self.mesh.n)
         return self.ndinterp.adjoint(xi, dxi, method=method) #.ravel()
 
+    def in_bounds(self, xi):
+        """
+        Find if coordinates are inside the local processor bounds
+        """
+        idx, d, bounds = self.ndinterp._find_indices(xi)
+        return bounds
 
 
     def objective_function(self, x, x0, sigma_x0):
@@ -450,7 +458,10 @@ class InversionND(object):
         ksp = self._initialise_ksp(cov, pc='lu')
         misfit = np.array(x - x0)
         lhs, rhs = cov.createVecs()
-        rhs.setArray(misfit)
+        rhs.set(0.0)
+        lindices = np.arange(0, misfit.size, dtype=PETSc.IntType)
+        rhs.setValues(lindices, misfit, PETSc.InsertMode.ADD_VALUES)
+        rhs.assemble()
         ksp.solve(rhs, lhs)
         sol = rhs*lhs
         sol.scale(0.5)
@@ -459,7 +470,7 @@ class InversionND(object):
         lhs.destroy()
         rhs.destroy()
 
-        return sol.sum()
+        return sol.sum()/comm.size
 
     def objective_function_lstsq_ad(self, x, x0, cov):
         """
@@ -472,13 +483,19 @@ class InversionND(object):
         rhs.set(1.0)
         ksp.solveTranspose(rhs, lhs)
         sol = rhs
-        sol.setArray(misfit)
+        sol.set(0.0)
+        lindices = np.arange(0, misfit.size, dtype=PETSc.IntType)
+        sol.setValues(lindices, misfit, PETSc.InsertMode.ADD_VALUES)
+        sol.assemble()
         sol *= lhs
+
+        toall, allvec = PETSc.Scatter.toAll(sol)
+        toall.scatter(sol, allvec, PETSc.InsertMode.INSERT)
 
         ksp.destroy()
         lhs.destroy()
-
-        return sol.array
+        sol.destroy()
+        return allvec.array
 
 
     def map(self, *args):

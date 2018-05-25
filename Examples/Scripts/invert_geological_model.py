@@ -15,6 +15,8 @@ from scipy.optimize import minimize
 import conduction
 from conduction.tools import PerplexTable
 from conduction.inversion import InvObservation, InvPrior
+from conduction.inversion import create_covariance_matrix
+from conduction.inversion import gaussian_function
 
 from petsc4py import PETSc
 from mpi4py import MPI
@@ -202,6 +204,7 @@ def adjoint_model(x, self, bc='Z'):
     dcdk_list = self.objective_routine_ad(k=k_list)
     dcdH_list = self.objective_routine_ad(H=H_list)
     dcdTb = self.objective_routine_ad(Tb=Tb)
+
     # observations
     dT += self.objective_routine_ad(T=T[-1])
 
@@ -398,6 +401,29 @@ eire_xyz = ireland_HF[qmask,0:3]
 
 qobs = InvObservation(eire_HF, eire_dHF, eire_xyz)
 inv.add_observation(q=qobs)
+
+
+curie_file = "/opt/ben/git/conduction/Examples/data/Li_2017_curiedepth_ireland.txt"
+cpd = np.loadtxt(curie_file, skiprows=1)
+cpd_xyz = cpd[:,:3]
+cpd_xyz[:,2] *= -1
+cpd_T  = np.ones(cpd.shape[0])*(580+273.14)
+cpd_dT = cpd[:,4]
+
+# half window sizes
+L1 = 98.8e3/2
+L2 = 195.0e3/2
+L3 = 296.4e3/2
+cov1 = create_covariance_matrix(cpd_dT, cpd_xyz[:,:2], L1*4, gaussian_function, length_scale=L1)
+cov2 = create_covariance_matrix(cpd_dT, cpd_xyz[:,:2], L2*4, gaussian_function, length_scale=L2)
+cov3 = create_covariance_matrix(cpd_dT, cpd_xyz[:,:2], L3*4, gaussian_function, length_scale=L3)
+# average these 3 matrices
+cov_mean = cov1 + cov2 + cov3
+cov_mean.scale(1.0/3)
+
+Tobs = InvObservation(cpd_T, cpd_dT, cpd_xyz, cov_mean)
+inv.add_observation(T=Tobs)
+
 
 
 # Starting x at priors
