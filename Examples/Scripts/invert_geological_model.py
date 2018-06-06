@@ -250,7 +250,7 @@ def adjoint_model(x, self, bc='Z'):
     dx = np.hstack([dk_list, dH_list, [dTb]])
 
     if args.log:
-        save_variables(args.o + '_step{:04d}.npz'.format(self.nIter), x, T=T[-1], q=q, cost=cost)
+        save_variables(args.echo + '_step{:04d}.npz'.format(self.nIter), x, T=T[-1], q=q, cost=cost)
     self.nIter += 1
     
     return cost, dx
@@ -377,9 +377,9 @@ assert np.all(mat_ID == inv.lithology_index), "Material Index should be identica
 size = len(inv.lithology_index)
 
 if comm.rank == 0:
-    row_format = " {0:2} | {1:35}| {2:.2f} | {3:.2e}"
+    row_format = " {0:2} | {1:35}| {2:.2f} | {3:.2f} | {4:.2e} | {5:.2e}"
     for i in range(size):
-        print(row_format.format(mat_ID[i], mat_name[i], mat_k[i,0], mat_H[i,0]))
+        print(row_format.format(mat_ID[i], mat_name[i], mat_k[i,0], mat_k[i,1], mat_H[i,0], mat_H[i,1]))
 
 kp  = InvPrior(mat_k[:,0], mat_k[:,1])
 Hp  = InvPrior(mat_H[:,0], mat_H[:,1])
@@ -408,9 +408,9 @@ cpd_T  = np.ones(cpd.shape[0])*(580+273.14)
 cpd_dT = cpd[:,4]
 
 # half window sizes
-L1 = 98.8e3/2
-L2 = 195.0e3/2
-L3 = 296.4e3/2
+L1 = 98.8e3/4
+L2 = 195.0e3/4
+L3 = 296.4e3/4
 cov1 = create_covariance_matrix(cpd_dT, cpd_xyz[:,:2], L1*4, gaussian_function, length_scale=L1)
 cov2 = create_covariance_matrix(cpd_dT, cpd_xyz[:,:2], L2*4, gaussian_function, length_scale=L2)
 cov3 = create_covariance_matrix(cpd_dT, cpd_xyz[:,:2], L3*4, gaussian_function, length_scale=L3)
@@ -470,4 +470,4 @@ if comm.rank == 0:
     print(res)
     print("Completed in {} minutes".format((time() - t)/60))
 
-    save_variables(args.o + "_minimiser_results.npz", res.x)
+    save_variables(args.echo + "_minimiser_results.npz", res.x)
