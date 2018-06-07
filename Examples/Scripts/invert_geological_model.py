@@ -383,7 +383,7 @@ if comm.rank == 0:
 
 kp  = InvPrior(mat_k[:,0], mat_k[:,1])
 Hp  = InvPrior(mat_H[:,0], mat_H[:,1])
-Tbp = InvPrior(bottomBC, 300.0/4)
+Tbp = InvPrior(bottomBC, 150.0)
 inv.add_prior(k=kp, H=Hp, Tb=Tbp)
 
 
