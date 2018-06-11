@@ -90,25 +90,6 @@ def save_variables(filename, x, **kwargs):
     Tb = x[-1]
     np.savez_compressed(filename, k=kt, H=Ht, Tb=Tb, **kwargs)
 
-def floating_topography(coords):
-    """ place a HF observation directly beneath the Dirichlet condition """
-    size = coords.shape[0]
-    coords[:,-1] = maxZ
-
-    zcube = mesh.coords[:,-1].reshape(mesh.n)
-    layer_cube = layer_voxel.reshape(mesh.n)
-    layer_mask = np.empty_like(layer_cube, dtype=bool)
-    for i in range(size):
-        layer_mask.fill(False)
-        dist, idx = inv.ndinterp.tree.query(coords[i])
-        layer_mask.flat[idx] = True
-        ii, jj, kk = np.where(layer_mask == True)
-        while layer_cube[ii,jj,kk] <= 0:
-            ii -= 1
-        ii -= 1 # insulate against gradient artefacts
-        coords[i,-1] = zcube[ii,jj,kk]
-    return coords
-
 def forward_model(x, self, bc='Z'):
     """
     N-dimensional nonlinear model with flux lower BC
@@ -402,7 +383,7 @@ if comm.rank == 0:
 
 kp  = InvPrior(mat_k[:,0], mat_k[:,1])
 Hp  = InvPrior(mat_H[:,0], mat_H[:,1])
-Tbp = InvPrior(bottomBC, 150.0)
+Tbp = InvPrior(bottomBC, 100.0)
 inv.add_prior(k=kp, H=Hp, Tb=Tbp)
 
 
@@ -413,7 +394,7 @@ qmask = ireland_HF[:,4] != 0
 eire_HF  = ireland_HF[qmask,3] * 1e-3
 eire_dHF = ireland_HF[qmask,4] * 1e-3
 eire_xyz = ireland_HF[qmask,0:3]
-eire_xyz = floating_topography(eire_xyz.copy())
+eire_xyz[:,2] = -600.0
 
 qobs = InvObservation(eire_HF, eire_dHF, eire_xyz)
 inv.add_observation(q=qobs)
@@ -447,11 +428,11 @@ x0 = np.hstack([kp.v, Hp.v, [Tbp.v]])
 
 
 # bounded optimisation
-bounds = {'k' : (0.5, 7.0),
+bounds = {'k' : (0.5, 10.0),
           'H' : (0.0, 10e-6),
           'a' : (0.0, 1.0),
           'q0': (5e-3, 70e-3),
-          'Tb': (1000.0, 2000.0)}
+          'Tb': (1000.0, 3000.0)}
 
 
 # Create bounds the same length as x
