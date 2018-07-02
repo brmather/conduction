@@ -48,7 +48,7 @@ def sensitive_priors(prior):
     p = np.asarray(prior.v)
     sigma_p = np.asarray(prior.dv)
 
-    perturbed = np.random.normal(p, sigma_p)
+    perturbed = np.array(np.random.normal(p, sigma_p))
     comm.Bcast([perturbed, MPI.DOUBLE], root=0)
 
     # deep copy should preserve coords, weights etc.
@@ -320,7 +320,7 @@ if comm.rank == 0:
 
 ## Setup the hexahedral mesh
 
-Nx, Ny, Nz = 51, 51, 204
+Nx, Ny, Nz = 100, 100, 300
 
 mesh = conduction.ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (Nx, Ny, Nz))
 
@@ -405,9 +405,12 @@ if comm.rank == 0:
     for i in range(size):
         print(row_format.format(mat_ID[i], mat_name[i], mat_k[i,0], mat_k[i,1], mat_H[i,0], mat_H[i,1]))
 
+Tb_prior = np.array(bottomBC)
+sigma_Tb = np.array(100.0)
+
 kp  = InvPrior(mat_k[:,0], mat_k[:,1])
 Hp  = InvPrior(mat_H[:,0], mat_H[:,1])
-Tbp = InvPrior(bottomBC, 100.0)
+Tbp = InvPrior(Tb_prior, sigma_Tb)
 inv.add_prior(k=kp, H=Hp, Tb=Tbp)
 
 
@@ -472,16 +475,6 @@ x_upper = np.hstack([k_upper, H_upper, [Tb_upper]])
 x_bounds = list(zip(x_lower, x_upper))
 
 
-## Test
-x = x0 + 0.01*x0
-dx = 0.01*x
-fm0 = forward_model(x, inv, 'Z')
-fm1 = forward_model(x+dx, inv, 'Z')
-ad  = adjoint_model(x, inv, 'Z')
-print("finite differences = {}".format(fm1-fm0))
-print("adjoint model = {}".format(ad[1].dot(dx)))
-
-
 ## Commence inversion
 options = {'maxiter': len(x0)*100}
 
@@ -497,9 +490,9 @@ for i in range(args.nsim):
     res = minimize(adjoint_model, x0, args=(inv, 'Z'), method='TNC', jac=True, bounds=x_bounds, options=options)
 
     # write to file
-    mesh.save_field_to_hdf5(T=inv.T, q=inv.q)
+    mesh.save_field_to_hdf5(args.echo + '_fields_{}.h5'.format(i), T=inv.T, q=inv.q)
 
     if comm.rank == 0:
         print("[{}/{}] Completed inversion in {} minutes".format(i, args.nsim, (time()-t)/60))
         save_variables(args.echo + "_minimiser_results_{}.npz".format(i), res.x,\
-            cost=res.fun, lith=np.concatentate([kpi.v, Hpi.v, [Tbpi.v]]))
+            cost=res.fun, lith=np.hstack([kpi.v, Hpi.v, [Tbpi.v]]))

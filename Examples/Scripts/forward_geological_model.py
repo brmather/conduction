@@ -156,7 +156,7 @@ if comm.rank == 0:
 
 ## Setup the hexahedral mesh
 
-Nx, Ny, Nz = 51, 51, 204
+Nx, Ny, Nz = 300, 300, 600
 
 mesh = conduction.ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (Nx, Ny, Nz))
 
