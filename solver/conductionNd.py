@@ -29,9 +29,9 @@ from ..mesh import MeshVariable
 
 class ConductionND(object):
     """
-    Implicit 3D steady-state heat equation solver over a structured grid using PETSc
+    Implicit N-dimensional solver for the steady-state heat equation
+    over a structured grid using PETSc data structures.
     """
-
     def __init__(self, minCoord, maxCoord, res, **kwargs):
 
         dim = len(res)
