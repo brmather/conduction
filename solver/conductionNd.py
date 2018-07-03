@@ -31,6 +31,16 @@ class ConductionND(object):
     """
     Implicit N-dimensional solver for the steady-state heat equation
     over a structured grid using PETSc data structures.
+
+    Parameters
+    ----------
+     minCoord : tuple, minimum Cartesian coordinates at edge of domain
+     maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+     res      : tuple, resolution in each dimension
+     kwargs   : dict, keyword arguments to pass to KSP method and preconditioner
+        see PETSc documentaion for KSPType and PCType options...
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html
     """
     def __init__(self, minCoord, maxCoord, res, **kwargs):
 
