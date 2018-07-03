@@ -580,6 +580,7 @@ class ConductionND(object):
         vec = self.gvec.duplicate()
 
         # change mode to append if file already exists
+        # set mode to "a" after first write
         if os.path.isfile(filename):
             mode = 'a'
         else:
@@ -600,6 +601,7 @@ class ConductionND(object):
             ViewHDF5.createHDF5(filename, mode=mode)
             ViewHDF5.view(obj=vec)
             ViewHDF5.destroy()
+            mode = "a"
 
         vec.destroy()
 
@@ -630,6 +632,7 @@ class ConductionND(object):
             kwdict[key] = arg
 
         # change mode to append if file already exists
+        # set mode to "a" after first write
         if os.path.isfile(filename):
             mode = 'a'
         else:
@@ -654,5 +657,6 @@ class ConductionND(object):
             ViewHDF5.createHDF5(filename, mode=mode)
             ViewHDF5.view(obj=gvec)
             ViewHDF5.destroy()
+            mode = "a"
 
         gvec.destroy()
