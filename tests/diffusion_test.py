@@ -22,10 +22,11 @@ mesh.boundary_condition("minY", 1.0, flux=False)
 mesh.boundary_condition("maxY", 0.0, flux=False)
 
 # solve timesteps
-print("Timestep size = {:e}".format(mesh.calculate_dt()))
+dt = mesh.calculate_dt()
+print("Timestep size = {:e}".format(dt))
 
-nsteps = 500
-T = mesh.timestep(nsteps, dt=1e-4)
+nsteps = 50
+T = mesh.timestep(nsteps, dt=dt)
 
 
 # plot results

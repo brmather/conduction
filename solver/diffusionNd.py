@@ -76,7 +76,7 @@ class DiffusionND(ConductionND):
         kappa = self.diffusivity
         delta = self.delta
         max_kappa = kappa._gdata.max()[1]
-        dt = np.product(delta)/(2.0*max_kappa**2)
+        dt = np.sum(delta**2)/(4.0*max_kappa)
         return dt
 
 
