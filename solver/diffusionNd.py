@@ -33,10 +33,14 @@ class DiffusionND(ConductionND):
 
     Parameters
     ----------
-     theta  : float, parameter that controls temporal discretisation [0, 1]
+     minCoord : tuple, minimum Cartesian coordinates at edge of domain
+     maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+     res      : tuple, resolution in each dimension
+     theta    : float, diffusion number that controls time discretisation [0, 1]
         0.0 = backward Euler
         0.5 = Crank-Nicholson (default, most accurate)
         1.0 = forward Euler
+     kwargs   : dict, keyword arguments to pass to KSP method and preconditioner
     """
     def __init__(self, minCoord, maxCoord, res, theta=0.5, **kwargs):
 
@@ -60,6 +64,11 @@ class DiffusionND(ConductionND):
         comm.Allreduce([delta, MPI.DOUBLE], [all_delta, MPI.DOUBLE], op=MPI.MAX)
         self.delta = all_delta
 
+        # get neighbours for rhs vector
+        self.neighbours = self.find_neighbours()
+
+        self.ldiag = self.lvec.duplicate()
+
 
     def calculate_dt(self):
         """
@@ -67,12 +76,55 @@ class DiffusionND(ConductionND):
         """
         kappa = self.diffusivity
         delta = self.delta
+        max_kappa = kappa._gdata.max()[1]
+        dt = max_kappa/delta
         return dt
+
+
+    def construct_rhs_new(self):
+
+        # call inherited method
+        rhs = super(DiffusionND, self).construct_rhs()
+
+
+        vec = np.zeros(self.nn)
+        neighbours = self.neighbours
+
+        temp  = self.temperature[:].reshape(n)
+        kappa = self.diffusivity[:].reshape(n)
+        k = np.pad(kappa, self.width, 'constant', constant_values=0)
+        T = np.pad(temp,  self.width, 'constant', constant_values=0)
+
+        for i in range(0, self.stencil_width):
+            obj = self.closure[i]
+
+            rows[i] = nodes
+            cols[i] = index[obj].ravel()
+
+            distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+            distance[distance==0] = 1e-12 # protect against dividing by zero
+            delta = 1.0/distance**2
+
+            vals[i] = delta*(0.5*(k[obj] + kappa)*(T[obj] - temp)).ravel()
+
+        # zero off-grid coordinates
+        vals[cols < 0] = 0.0
+
+        vec = vals.sum(axis=0)
+
+
+        return rhs
 
 
     def construct_rhs(self):
 
+        rhs = self.rhs
+
+        # heat sources
         vec = -1.0*self.heat_sources[:]
+
+        # past temperature
+        vec += self.temperature[:]
 
         for wall in self.bc:
             val  = self.bc[wall]['val']
@@ -84,10 +136,6 @@ class DiffusionND(ConductionND):
                 vec[mask] = val
 
         rhs[:] = vec
-
-        ## new bit
-
-
         return rhs
 
 
@@ -98,17 +146,26 @@ class DiffusionND(ConductionND):
         if type(dt) == type(None):
             dt = self.calculate_dt()
 
+        ldiag = self.ldiag
         theta = self.theta
         Lscale = dt*theta
         Rscale = dt*(1.0 - theta)
 
-        rhs = self.construct_rhs()
         mat = self.construct_matrix()
-        rhs.scale(Rscale)
-        mat.scale(Lscale)
+        mat.scale(-Lscale)
+        diag = mat.getDiagonal()
+        diag += 1.0
 
+        self.dm.globalToLocal(diag, ldiag)
+        ldiag.array[self.dirichlet_mask] = 1.0
+        self.dm.localToGlobal(ldiag, diag)
+        mat.setDiagonal(diag)
 
         for step in range(steps):
+
+            rhs = self.construct_rhs()
+            # rhs._gdata.scale(Rscale)
+
             T = self.solve(mat, rhs)
 
         
