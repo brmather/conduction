@@ -16,19 +16,55 @@ Implicit heat conduction solver on a structured grid written in Python. It inter
 
 PETSc is used extensively via the Python frontend, petsc4py. It is required that PETSc be configured and installed on your local machine prior to using this module. You can use pip to install petsc4py and its dependencies.
 
-```
+```shell
 pip install [--user] numpy mpi4py
 pip install [--user] petsc petsc4py
 ```
 
-If that fails you must [compile](https://git.dias.ie/itherc/conduction/blob/master/COMPILE.md) these dependencies manually.
+If that fails, you must [compile](https://git.dias.ie/itherc/conduction/blob/master/COMPILE.md) these dependencies manually.
 
 ## Usage
 
-All of the scripts in the *tests* subdirectory can be run in parallel, e.g.
+All of the scripts in the *tests* directory can be run in parallel, e.g.
 
 ```
 mpirun -np 4 python conduction3d_benchmark.py
 ```
 
 where the number after the `np` flag specifies the number of processors.
+
+### API
+
+A `ConductionND` object can be defined based on the extent of the domain and the number of cells. The simplified use-case below outlines the following tasks:
+
+1. Define a mesh on which to solve the heat equation
+2. Populate the thermal conductivity and heat production fields
+3. Set boundary conditions on the top and bottom walls
+4. Solve for temperature
+
+```python
+from conduction import ConductionND
+
+# define the mesh
+minX, minY, minZ = 0.0, 0.0, 0.0
+maxX, maxY, maxZ = 1.0, 1.0, 1.0
+resX, resY, resZ = 10, 10, 10
+
+mesh = ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (resX, resY, resZ))
+
+# populate thermal conductivity and heat production fields
+n = resX*resY*resZ
+k = np.ones(n)
+H = np.ones(n)
+
+mesh.update_properties(k, H)
+
+# set boundary conditions
+mesh.boundary_condition("maxZ", 0.0, flux=False) # Dirichlet BC
+mesh.boundary_condition("minZ", 1.0, flux=True) # Neumann BC
+
+# solve temperature
+T = mesh.solve()
+```
+
+More complex examples can be found in the `Examples` directory.
