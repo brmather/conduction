@@ -507,6 +507,9 @@ class ConductionND(object):
 
 
     def sync(self, vector):
+        """
+        Synchronise a vector field across all processors
+        """
         self.lvec.setArray(vector)
         self.dm.localToGlobal(self.lvec, self.gvec)
         self.dm.globalToLocal(self.gvec, self.lvec)
@@ -514,12 +517,30 @@ class ConductionND(object):
 
 
     def gradient(self, vector, **kwargs):
+        """
+        Computes the gradient of a vector field
 
+        Parameters
+        ----------
+         vector : array shape(n,) size of the mesh
+
+        Returns
+        -------
+         grad   : array shape(dim,n) gradient in each direction
+        """
         return np.gradient(vector.reshape(self.n), *self.grid_coords[::-1], **kwargs)
 
 
     def heatflux(self):
+        """
+        Compute the heat flux based on stored vector fields
+        - temperature
+        - diffusivity
 
+        Returns
+        -------
+         Q : array shape(dim,n) heat flux in each direction
+        """
         T = self.temperature[:]
         k = self.diffusivity[:] * -1
         divT = self.gradient(T)
@@ -530,7 +551,59 @@ class ConductionND(object):
         return divT
 
 
+    def isosurface(self, vector, isoval, axis=0, interp='nearest'):
+        """
+        Calculate an isosurface along a given axis
+        (So far this is only working for axis=0)
+
+        Parameters
+        ----------
+         vector : array, the same size as the mesh (n,)
+         isoval : float, isosurface value
+         axis   : int, axis to generate the isosurface
+         interp : str, method can be
+            'nearest' - nearest neighbour interpolation
+            'linear'  - linear interpolation
+        
+        Returns
+        -------
+         z_interp : isosurface the same size as the specified axis
+        """
+        Vcube = vector.reshape(self.n)
+        Zcube = self.coords[:,axis].reshape(mesh.n)
+        sort_idx = ((Vcube - isoval)**2).argsort(axis=axis)
+        i0 = sort_idx[0]
+        z0 = np.take(Zcube, i0)
+        
+        if interp == 'linear':
+            i1 = sort_idx[1]
+            z1 = np.take(Zcube, i1)
+            
+            v0 = np.take(Vcube, i0)
+            v1 = np.take(Vcube, i1)
+            
+            vmin = np.minimum(v0, v1)
+            vmax = np.maximum(v0, v1)
+            ratio = np.vstack([np.ones_like(vmax)*isoval, vmin, vmax])
+            ratio -= ratio.min(axis=0)
+            ratio /= ratio.max(axis=0)
+            z_interp = ratio[0]*z1 + (1.0 - ratio[0])*z0
+            return z_interp
+        elif interp == 'nearest':
+            return z0
+
+
     def save_mesh_to_hdf5(self, filename):
+        """
+        Save important mesh information to an HDF5 file
+        including bounding box and resolution.
+
+        These are saved under the topology group
+
+        Parameters
+        ----------
+         filename : file to put .h5 file
+        """
 
         import h5py
 
