@@ -340,7 +340,7 @@ class InversionND(object):
         return dcdv
 
 
-    def create_covariance_matrix(self, sigma_x0, width=1, fn=None, *args):
+    def create_covariance_matrix(self, sigma_x0, width=1, indexing='xy', fn=None, *args):
         """
         Create a covariance matrix assuming some function for variables on the mesh
         By default this is Gaussian.
@@ -350,8 +350,10 @@ class InversionND(object):
          sigma_x0 : uncertainty values to insert into matrix
          width    : width of stencil for matrix (int)
             i.e. extended number of neighbours for each node
-         fn     : function to apply (default is Gaussian)
-         *args  : input arguments to pass to fn
+         indexing : use the xy coordinates of the mesh nodes or indices
+            set to 'xy' or 'ij'
+         fn       : function to apply (default is Gaussian)
+         *args    : input arguments to pass to fn
 
         Returns
         -------
@@ -369,7 +371,17 @@ class InversionND(object):
         n = self.mesh.n
         dim = self.mesh.dim
 
-        coords = self.mesh.coords
+        if indexing == "xy":
+            coords = self.mesh.coords
+        elif indexing == "ij":
+            ic = []
+            for i in range(dim):
+                ic.append( np.arange(n[i]) )
+            cij = np.meshgrid(*ic, indexing="ij")
+
+            for i in range(dim):
+                cij[i] = cij[i].ravel()
+            coords = np.column_stack(cij)
 
         # setup new stencil
         stencil_width = 2*self.mesh.dim*width + 1
@@ -426,6 +438,78 @@ class InversionND(object):
         mat.setDiagonal(gvec)
         return mat
 
+
+    def create_covariance_matrix_kdtree(self, sigma_x0, width=1, indexing='xy', fn=None, *args):
+        """
+        Create a covariance matrix assuming some function for variables on the mesh.
+        By default this is Gaussian.
+
+        This uses a KDTree to determine distance between nodes, rather than the
+        matrix stencil indexing used by create_covariance_matrix
+        
+
+        Arguments
+        ---------
+         sigma_x0 : uncertainty values to insert into matrix
+         width    : width of stencil for matrix (int)
+            i.e. extended number of neighbours for each node
+         indexing : use the xy coordinates of the mesh nodes or indices
+            set to 'xy' or 'ij'
+         fn       : function to apply (default is Gaussian)
+         *args    : input arguments to pass to fn
+
+        Returns
+        -------
+            mat : covariance matrix
+        """
+
+        def gaussian_fn(sigma_x0, dist, length_scale):
+            return sigma_x0**2 * np.exp(-dist**2/(2*length_scale**2))
+
+        if type(fn) == type(None):
+            fn = gaussian_fn
+
+        nodes = self.mesh.nodes
+        nn = self.mesh.nn
+        n = self.mesh.n
+        dim = self.mesh.dim
+
+        if indexing == "xy":
+            coords = self.mesh.coords
+            tree = self.ndinterp.tree
+        elif indexing == "ij":
+            from scipy.spatial import cKDTree
+
+            ic = []
+            for i in range(dim):
+                ic.append( np.arange(n[i]) )
+            cij = np.meshgrid(*ic, indexing="ij")
+
+            for i in range(dim):
+                cij[i] = cij[i].ravel()
+            coords = np.column_stack(cij)
+            tree = cKDTree(coords)
+
+
+        # find distance between coords and centroid
+        dist = np.linalg.norm(coords - coords.mean(axis=0), axis=1)
+        nnz = int(1.5*(dist <= max_dist).sum())
+
+        mat = self.mesh._initialise_matrix(nnz=(nnz,1))
+        mat.assemblyBegin()
+
+        for i in range(0, nn):
+            idx = tree.query_ball_point(coords[i], max_dist)
+            dist = np.linalg.norm(coords[i] - coords[idx], axis=1)
+            
+            row = i
+            col = idx
+            val = fn(sigma[idx], dist, *args, **kwargs)
+            
+            mat.setValues(row, col, val)
+
+        mat.assemblyEnd()
+        return mat
 
 
     def interpolate(self, field, xi, method="nearest"):

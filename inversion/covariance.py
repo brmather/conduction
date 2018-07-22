@@ -20,8 +20,8 @@ except: pass
 
 import numpy as np
 from mpi4py import MPI
-
 comm = MPI.COMM_WORLD
+
 
 def gaussian(sigma, distance, length_scale):
     """
@@ -60,33 +60,70 @@ def create_covariance_matrix(sigma, coords, max_dist, func, *args, **kwargs):
     from scipy.spatial import cKDTree
     from petsc4py import PETSc
 
-    size = len(sigma)
+    ncov = len(sigma)
+    nn = np.hstack(sigma).size
+    if ncov < nn:
+        # this means we have a piecewise covariance matrix
+        if len(coords) != ncov or len(max_dist) != ncov:
+            raise ValueError("sigma, coords, max_dist must be the same dimensions")
 
-    # find distance between coords and centroid
-    dist = np.linalg.norm(coords - coords.mean(axis=0), axis=1)
-    nnz = int(1.5*(dist <= max_dist).sum())
+        # find the size of each list
+        size = np.zeros(ncov, dtype=PETSc.IntType)
+        nnz = []
+        for j in range(0,ncov):
+            size[j] = len(sigma[j])
+
+            dist = np.linalg.norm(coords[j] - coords[j].mean(axis=0), axis=1)
+            nnz_j = int(1.5*(dist <= max(max_dist[j])).sum())
+            nnz.append( np.ones(size[j], dtype=PETSc.IntType)*nnz_j )
+
+        nnz = np.clip(np.hstack(nnz), 1, 99999)
+
+
+    elif ncov == nn:
+        ncov = 1
+        size = [len(sigma)]
+
+        # find distance between coords and centroid
+        dist = np.linalg.norm(coords - coords.mean(axis=0), axis=1)
+
+        # pad these within a list object
+        coords = [coords]
+        max_dist = [np.ones_like(sigma)*max_dist]
+        sigma = [sigma]
+
+        nnz = int(1.5*(dist <= max(max_dist)).sum())
+
 
     # set up matrix
     mat = PETSc.Mat().create(comm)
     mat.setType('aij')
-    mat.setSizes((size, size))
+    mat.setSizes((nn, nn))
     mat.setPreallocationNNZ((nnz,1))
     mat.setOption(PETSc.Mat.Option.NEW_NONZERO_ALLOCATION_ERR, 0)
     mat.setFromOptions()
     mat.assemblyBegin()
 
-    # set up KDTree and max_dist to query
-    tree = cKDTree(coords)
+    colsum = np.cumsum(np.insert(size, 0, 0))
 
-    for i in range(0, size):
-        idx = tree.query_ball_point(coords[i], max_dist)
-        dist = np.linalg.norm(coords[i] - coords[idx], axis=1)
-        
-        row = i
-        col = idx
-        val = func(sigma[idx], dist, *args, **kwargs)
-        
-        mat.setValues(row, col, val)
+    row = 0
+    for j in range(0, ncov):
+        icoord = coords[j]
+        imax_dist = max_dist[j]
+        isigma = sigma[j]
+
+        # set up KDTree and max_dist to query
+        tree = cKDTree(icoord)
+
+        for i in range(0, size[j]):
+            idx = tree.query_ball_point(icoord[i], imax_dist[i])
+            dist = np.linalg.norm(icoord[i] - icoord[idx], axis=1)
+            
+            col = np.array(idx + colsum[j], dtype=PETSc.IntType)
+            val = func(isigma[idx], dist, *args, **kwargs)
+            mat.setValues(row, col, val)
+            
+            row += 1
 
     mat.assemblyEnd()
     return mat
