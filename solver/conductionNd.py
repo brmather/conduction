@@ -81,6 +81,7 @@ class ConductionND(object):
 
         self.n = n[::-1]
         self.nn = nn
+        self.npoints = nn
 
         # stencil size
         self.width = width
@@ -561,7 +562,7 @@ class ConductionND(object):
          vector : array, the same size as the mesh (n,)
          isoval : float, isosurface value
          axis   : int, axis to generate the isosurface
-         interp : str, method can be
+         interp : str, method can be either
             'nearest' - nearest neighbour interpolation
             'linear'  - linear interpolation
         
@@ -570,18 +571,29 @@ class ConductionND(object):
          z_interp : isosurface the same size as the specified axis
         """
         Vcube = vector.reshape(self.n)
-        Zcube = self.coords[:,axis].reshape(mesh.n)
-        sort_idx = ((Vcube - isoval)**2).argsort(axis=axis)
+        Zcube = self.coords[:,::-1][:,axis].reshape(self.n)
+        sort_idx = ((Vcube - isoval)**2).argsort(axis=axis)    
         i0 = sort_idx[0]
-        z0 = np.take(Zcube, i0)
+        # z0 = Zcube.take(i0)
         
+        obj = []
+        for d in range(0, self.dim):
+            obj.append( slice(0, self.n[d]) )
+        obj.pop(axis)
+        
+        idx = list(np.mgrid[obj])
+        idx.insert(axis, i0)
+        z0 = Zcube[idx]
+
         if interp == 'linear':
+            v0 = Vcube[idx]
+            
+            # identify next nearest node
             i1 = sort_idx[1]
-            z1 = np.take(Zcube, i1)
-            
-            v0 = np.take(Vcube, i0)
-            v1 = np.take(Vcube, i1)
-            
+            idx[axis] = i1
+            z1 = Zcube[idx]
+            v1 = Vcube[idx]
+
             vmin = np.minimum(v0, v1)
             vmax = np.maximum(v0, v1)
             ratio = np.vstack([np.ones_like(vmax)*isoval, vmin, vmax])

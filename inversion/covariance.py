@@ -127,3 +127,74 @@ def create_covariance_matrix(sigma, coords, max_dist, func, *args, **kwargs):
 
     mat.assemblyEnd()
     return mat
+
+
+def create_covariance_matrix_index(sigma, coords, max_dist, index, func, *args, **kwargs):
+    """
+    Create a covariance matrix based on distance.
+    Euclidean distance between a set of points is queried from a KDTree
+    where max_dist sets the maximum radius between points to cut-off.
+
+    Parameters
+    ----------
+     sigma    : values of uncertainty for each point
+     coords   : coordindates in n-dimensions for each point
+     max_dist : maximum radius to search for points
+     index    : map covariance function to regions of identical index
+     func     : covariance function (default is Gaussian)
+        (pass a length parameter if using default)
+     args     : arguments to pass to func
+     kwargs   : keyword arguments to pass to func
+
+    Returns
+    -------
+     mat      : covariance matrix
+
+    Notes
+    -----
+     Increasing max_dist increases the number of nonzeros in the
+     covariance matrix.
+
+     func should always receive sigma and distance as first
+     two inputs
+    """
+    from scipy.spatial import cKDTree
+    from petsc4py import PETSc
+
+    size = len(sigma)
+
+    # find distance between coords and centroid
+    dist = np.linalg.norm(coords - coords.mean(axis=0), axis=1)
+    nnz = int(1.5*(dist <= max_dist).sum())
+
+
+    # set up matrix
+    mat = PETSc.Mat().create(comm)
+    mat.setType('aij')
+    mat.setSizes((size, size))
+    mat.setPreallocationNNZ((nnz,1))
+    mat.setOption(PETSc.Mat.Option.NEW_NONZERO_ALLOCATION_ERR, 0)
+    mat.setFromOptions()
+    mat.assemblyBegin()
+    
+    
+    lith_index = np.unique(index)
+
+    for l in lith_index:
+        indices = np.nonzero(index == l)[0].astype(PETSc.IntType)
+
+        icoord = coords[indices]
+        isigma = sigma[indices]
+        tree = cKDTree(icoord)
+
+        for i in indices:
+            idx = tree.query_ball_point(coords[i], max_dist)
+            dist = np.linalg.norm(coords[i] - icoord[idx], axis=1)
+            
+            row = i
+            col = indices[idx]
+            val = func(isigma[idx], dist, *args, **kwargs)
+            mat.setValues(row, col, val)
+
+    mat.assemblyEnd()
+    return mat

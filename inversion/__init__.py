@@ -20,3 +20,4 @@ from .inverse_conduction import Inversion
 from .nd_inverse_conduction import InversionND
 from .objective_variables import *
 from .covariance import create_covariance_matrix
+from .covariance import create_covariance_matrix_index

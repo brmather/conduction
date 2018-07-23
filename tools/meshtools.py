@@ -41,3 +41,8 @@ def sum_duplicates(I, J, V):
     unique_mask = np.append(True, unique_mask)
     unique_inds, = np.nonzero(unique_mask)
     return I[unique_mask], J[unique_mask], np.add.reduceat(V, unique_inds)
+
+def convert_petscmat_to_scipy(mat):
+    from scipy.sparse import csr_matrix
+    indptr, indices, values = mat.getValuesCSR()
+    return csr_matrix((values, indices, indptr))
