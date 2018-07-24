@@ -564,22 +564,17 @@ class InversionND(object):
 
         misfit = np.array(x - x0)
         lhs, rhs = cov.createVecs()
-        rhs.set(1.0)
-        ksp.solveTranspose(rhs, lhs)
-
-        sol = rhs.duplicate()
-        sol.set(0.0)
+        rhs.set(0.0)
         lindices = np.arange(0, misfit.size, dtype=PETSc.IntType)
-        sol.setValues(lindices, misfit, PETSc.InsertMode.ADD_VALUES)
-        sol.assemble()
-        sol *= lhs
+        rhs.setValues(lindices, misfit, PETSc.InsertMode.ADD_VALUES)
+        rhs.assemble()
+        ksp.solve(rhs, lhs)
 
-        toall, allvec = PETSc.Scatter.toAll(sol)
-        toall.scatter(sol, allvec, PETSc.InsertMode.INSERT)
+        toall, allvec = PETSc.Scatter.toAll(lhs)
+        toall.scatter(lhs, allvec, PETSc.InsertMode.INSERT)
 
         ksp.destroy()
         lhs.destroy()
-        sol.destroy()
         return allvec.array
 
 

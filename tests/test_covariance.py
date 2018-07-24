@@ -19,8 +19,7 @@ def objective_function_ad(x, x0, cov):
     """ adjoint model """
     misfit = np.array(x - x0)
     ones = np.ones_like(misfit)
-    res  = spsolve(cov.T, ones)
-    res *= misfit
+    res  = spsolve(cov, misfit)
     return res
 
 def gaussian_function(sigma, distance, length_scale):
@@ -38,7 +37,7 @@ def construct_covariance_matrix(sigma, coords, length_scale):
 
 
 size = 10
-x = np.ones(size)
+x = np.linspace(5, 10, 10)
 x0 = np.ones(size)*2.5
 sigma_x = np.ones(size)*10.0
 dx = x*0.1
