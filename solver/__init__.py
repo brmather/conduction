@@ -17,5 +17,6 @@ along with Conduction.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .conductionNd_serial import ConductionND as ConductionND_serial
+from .diffusionNd_serial import DiffusionND as DiffusionND_serial
 from .conductionNd import ConductionND
 from .diffusionNd import DiffusionND

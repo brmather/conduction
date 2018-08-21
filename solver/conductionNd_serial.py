@@ -29,7 +29,7 @@ class ConductionND(object):
     (Serial version)
     """
 
-    def __init__(self, minCoord, maxCoord, res):
+    def __init__(self, minCoord, maxCoord, res, **kwargs):
 
         dim = len(res)
         extent = np.zeros(dim*2)
@@ -39,6 +39,8 @@ class ConductionND(object):
 
         bbox  = list(range(dim))
         n = np.zeros(dim, dtype=np.int32)
+
+        width = kwargs.pop('stencil_width', 1)
 
         for i in range(0, dim):
             extent[index]   = minCoord[i]
@@ -57,9 +59,11 @@ class ConductionND(object):
         nn = sizes
         self.n = n[::-1]
         self.nn = nn
+        self.npoints = nn
 
         # stencil size
-        self.stencil_width = 2*dim + 1
+        self.width = width
+        self.stencil_width = 2*dim*width + 1
 
         # local numbering
         self.nodes = np.arange(0, nn, dtype=np.int32)
@@ -206,7 +210,7 @@ class ConductionND(object):
         wall = str(wall)
 
         if wall in self.bc:
-            self.bc[wall]["val"]  = val
+            self.bc[wall]["val"]  = np.array(val, copy=True)
             self.bc[wall]["flux"] = flux
             d = self.bc[wall]
 
@@ -293,6 +297,7 @@ class ConductionND(object):
         val = val[mask]
 
         mat = sparse.coo_matrix((val, (row, col)), shape=self.sizes).tocsr()
+        mat.sum_duplicates()
         diag = np.ravel(mat.sum(axis=1))
         diag *= -1
         mat.setdiag(diag)
