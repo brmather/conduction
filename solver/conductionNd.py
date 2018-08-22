@@ -111,6 +111,7 @@ class ConductionND(object):
         self._initialise_boundary_dictionary()
         self.mat = self._initialise_matrix()
         self._initialise_COO_vectors(width)
+        self.ksp = self._initialise_ksp(**kwargs)
 
         # thermal properties
         self.diffusivity  = MeshVariable('diffusivity', dm)
@@ -129,6 +130,27 @@ class ConductionND(object):
         self.lvec.destroy()
         self.gvec.destroy()
         self.lgmap.destroy()
+
+
+    def _initialise_ksp(self, matrix=None, atol=1e-10, rtol=1e-50, **kwargs):
+        """
+        Initialise linear solver object
+        """
+        if matrix is None:
+            matrix = self.mat
+
+        solver = kwargs.pop('solver', 'gmres')
+        precon = kwargs.pop('pc', None)
+
+        ksp = PETSc.KSP().create(comm)
+        ksp.setType(solver)
+        ksp.setOperators(matrix)
+        ksp.setTolerances(atol, rtol)
+        if precon is not None:
+            pc = ksp.getPC()
+            pc.setType(precon)
+        ksp.setFromOptions()
+        return ksp
 
 
     def _initialise_COO_vectors(self, pad=1):
@@ -482,7 +504,7 @@ class ConductionND(object):
         return rhs
 
 
-    def solve(self, matrix=None, rhs=None, solver='bcgs'):
+    def solve(self, matrix=None, rhs=None):
         """
         Construct the matrix A and vector b in Ax = b
         and solve for x
@@ -495,13 +517,8 @@ class ConductionND(object):
             rhs = self.construct_rhs()
         res = self.temperature
 
-        ksp = PETSc.KSP().create(comm=comm)
-        ksp.setType(solver)
+        ksp = self.ksp
         ksp.setOperators(matrix)
-        # pc = ksp.getPC()
-        # pc.setType('gamg')
-        ksp.setFromOptions()
-        ksp.setTolerances(1e-20, 1e-50)
         ksp.solve(rhs._gdata, res._gdata)
         # We should hand this back to local vectors
         return res[:]
@@ -544,7 +561,7 @@ class ConductionND(object):
         """
         T = self.temperature[:]
         k = self.diffusivity[:] * -1
-        divT = self.gradient(T)
+        divT = np.array(self.gradient(T))
         for i in range(0, self.dim):
             div = k*divT[i].ravel()
             divT[i] = div

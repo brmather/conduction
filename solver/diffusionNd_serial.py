@@ -22,9 +22,9 @@ except: pass
 import numpy as np
 from scipy import sparse
 
-from . import ConductionND_serial
+from . import ConductionND_serial as ConductionND
 
-class DiffusionND(ConductionND_serial):
+class DiffusionND(ConductionND):
     """
     Implicit N-dimensional solver for the time-dependent heat equation
     over a structured grid using PETSc data structures (inherits ConductionND).
@@ -73,7 +73,7 @@ class DiffusionND(ConductionND_serial):
         return dt
 
 
-    def construct_matrix(self, in_place=True, derivative=False, scale=1.0):
+    def construct_matrix_dt(self, in_place=True, derivative=False, scale=1.0):
         """
         Construct the coefficient matrix
         i.e. matrix A in Ax = b
@@ -98,7 +98,7 @@ class DiffusionND(ConductionND_serial):
         return mat.tocsr()
 
 
-    def construct_rhs(self, scale=1.0):
+    def construct_rhs_dt(self, scale=1.0):
         """
         Construct the right-hand-side vector
         i.e. vector b in Ax = b
@@ -170,10 +170,10 @@ class DiffusionND(ConductionND_serial):
         Rscale = dt*(1.0 - theta)
 
         # construct a constant matrix
-        mat = self.construct_matrix(scale=Lscale)
+        mat = self.construct_matrix_dt(scale=Lscale)
 
         for step in range(steps):
-            rhs = self.construct_rhs(scale=Rscale)
+            rhs = self.construct_rhs_dt(scale=Rscale)
             T = self.solve(mat, rhs)
 
         return T

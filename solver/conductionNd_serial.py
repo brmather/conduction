@@ -363,3 +363,56 @@ class ConductionND(object):
             divT[i] = div
 
         return divT
+
+
+    def isosurface(self, vector, isoval, axis=0, interp='nearest'):
+        """
+        Calculate an isosurface along a given axis
+        (So far this is only working for axis=0)
+
+        Parameters
+        ----------
+         vector : array, the same size as the mesh (n,)
+         isoval : float, isosurface value
+         axis   : int, axis to generate the isosurface
+         interp : str, method can be either
+            'nearest' - nearest neighbour interpolation
+            'linear'  - linear interpolation
+        
+        Returns
+        -------
+         z_interp : isosurface the same size as the specified axis
+        """
+        Vcube = vector.reshape(self.n)
+        Zcube = self.coords[:,::-1][:,axis].reshape(self.n)
+        sort_idx = ((Vcube - isoval)**2).argsort(axis=axis)    
+        i0 = sort_idx[0]
+        # z0 = Zcube.take(i0)
+        
+        obj = []
+        for d in range(0, self.dim):
+            obj.append( slice(0, self.n[d]) )
+        obj.pop(axis)
+        
+        idx = list(np.mgrid[obj])
+        idx.insert(axis, i0)
+        z0 = Zcube[idx]
+
+        if interp == 'linear':
+            v0 = Vcube[idx]
+            
+            # identify next nearest node
+            i1 = sort_idx[1]
+            idx[axis] = i1
+            z1 = Zcube[idx]
+            v1 = Vcube[idx]
+
+            vmin = np.minimum(v0, v1)
+            vmax = np.maximum(v0, v1)
+            ratio = np.vstack([np.ones_like(vmax)*isoval, vmin, vmax])
+            ratio -= ratio.min(axis=0)
+            ratio /= ratio.max(axis=0)
+            z_interp = ratio[0]*z1 + (1.0 - ratio[0])*z0
+            return z_interp
+        elif interp == 'nearest':
+            return z0

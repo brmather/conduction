@@ -80,7 +80,7 @@ class DiffusionND(ConductionND):
         return dt
 
 
-    def construct_matrix(self, in_place=True, derivative=False, scale=1.0):
+    def construct_matrix_dt(self, in_place=True, derivative=False, scale=1.0):
         """
         Construct the coefficient matrix
         i.e. matrix A in Ax = b
@@ -114,7 +114,7 @@ class DiffusionND(ConductionND):
         return mat
 
 
-    def construct_rhs(self, in_place=True, scale=1.0):
+    def construct_rhs_dt(self, in_place=True, scale=1.0):
         """
         Construct the right-hand-side vector
         i.e. vector b in Ax = b
@@ -189,10 +189,10 @@ class DiffusionND(ConductionND):
         Rscale = dt*(1.0 - theta)
 
         # construct a constant matrix
-        mat = self.construct_matrix(scale=Lscale)
+        mat = self.construct_matrix_dt(scale=Lscale)
 
         for step in range(steps):
-            rhs = self.construct_rhs(scale=Rscale)
+            rhs = self.construct_rhs_dt(scale=Rscale)
             T = self.solve(mat, rhs)
 
         return T
