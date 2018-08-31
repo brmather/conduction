@@ -13,7 +13,7 @@ Silurian sediments,11,2.8649777111,0.6756287677,0.0000015,0.0000003,basement dep
 Ordovician volcanics,12,1.8156423335,0.1166716161,0.0000015,0.0000003,basement depth reference
 Dalradian Supergroup,13,3.5,1,0.0000014,0.0000002,upper crust reference - layer 3 from Javier model
 Proterozoic Basement,14,3.5,1,0.0000014,0.0000002,upper crust reference - layer 3 from Javier model
-Upper crust,15,3.5,1,0.0000014,0.0000002,upper crust reference - layer 3 from Javier model
+Middle crust,15,3.5,1,0.0000014,0.0000002,upper crust reference - layer 3 from Javier model
 Lower crust,16,4,1,0.0000001,0.0000001,lower crust (layer 4) from Javier model
 Leinster lithospheric mantle,17,5.3,1,0,0.0000001,Leinster (layer 5) from Javier model
 Mid-Valley lithospheric mantle,18,5.3,1,0,0.0000001,Mid-Valley (layer 6) from Javier model

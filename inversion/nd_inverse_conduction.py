@@ -71,8 +71,6 @@ class InversionND(object):
 
         # Initialise linear solver
         self.ksp = self._initialise_ksp(**kwargs)
-        self.ksp_ad  = self._initialise_ksp(**kwargs)
-        self.ksp_adT = self._initialise_ksp(**kwargs) # <- need to pass transposed matrix
 
         # these should be depreciated soon
         self.temperature = self.mesh.gvec.duplicate()
@@ -325,8 +323,6 @@ class InversionND(object):
                     dcdinterp = self.objective_function_ad(ival, obs.v, obs.dv)
                 else:
                     dcdinterp = self.objective_function_lstsq_ad(ival*obs.w, obs.v*obs.w, obs.cov)
-                    # lgmap = obs.cov.getLGMap()
-                    # lgmap.applyInverse()
 
                 # interpolation
                 dcdv = self.interpolate_ad(dcdinterp, val, obs.coords)
@@ -660,9 +656,9 @@ class InversionND(object):
         comm.Allreduce([nT, MPI.BOOL], [adjoint, MPI.BOOL], op=MPI.LOR)
         if adjoint:
             if matrix == None:
-                matrix = self.mesh.construct_matrix(in_place=False)
+                matrix = self.mesh.construct_matrix(in_place=True)
             if rhs == None:
-                rhs = self.mesh.construct_rhs(in_place=False)
+                rhs = self.mesh.rhs
             rhs[:] = dT
 
             gvec = self.mesh.gvec
@@ -674,18 +670,14 @@ class InversionND(object):
             # adjoint b vec
             db_ad = lvec.duplicate()
 
-            matrix_T = self.mesh._initialise_matrix()
-            matrix.transpose(matrix_T)
-            self.ksp_adT.setOperators(matrix_T)
             gvec.setArray(rhs._gdata)
-            self.ksp_adT.solve(rhs._gdata, gvec)
+            self.ksp.solveTranspose(rhs._gdata, gvec)
             self.mesh.dm.globalToLocal(gvec, db_ad)
 
             # adjoint A mat
             dk_ad = np.zeros_like(T)
 
             matrix.scale(-1.0)
-            self.ksp_ad.setOperators(matrix)
             # self.mesh.boundary_condition('maxZ', 0.0, flux=False) # not ND!!
             dT_ad = dT[:]
             kappa = np.zeros_like(T)
@@ -707,7 +699,7 @@ class InversionND(object):
                     dAdkl = self.mesh.construct_matrix(in_place=False, derivative=True)
                     dAdklT = dAdkl * res._gdata
                     gvec.setArray(dAdklT) # try make the solution somewhat close
-                    self.ksp_ad.solve(dAdklT, gvec)
+                    self.ksp.solve(dAdklT, gvec)
                     self.mesh.dm.globalToLocal(gvec, lvec)
 
                     # need to call sum on the global vec
