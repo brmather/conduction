@@ -626,6 +626,65 @@ class InversionND(object):
         return list(all_lith_variables)
 
 
+    def create_wall_map(self, wall):
+        coords = self.mesh.coords
+        dim = self.mesh.dim
+
+        bbox = self.mesh.dm.getBoundingBox()
+        sizes = self.mesh.dm.getSizes()
+
+        # Setup boundary dictionary
+        bc = dict()
+
+        wall = [("minX", "maxX"), ("minY", "maxY"), ("minZ", "maxZ")]
+
+        for i in range(0, dim):
+            w0, w1 = wall[i]
+            c0, c1 = bbox[i]
+            m0, m1 = coords[:,i] == c0, coords[:,i] == c1
+
+    def map_wall(self, wall, *args):
+        """
+        Map lists of arguments to a boundary wall
+
+
+        """
+
+        if wall not in self.mesh.bc:
+            raise ValueError("wall must be one of {}".format(self.mesh.bc.keys()))
+        if len(args) +1 != self.mesh.dim:
+            # +1 because it's a plane
+            raise ValueError("dimensions of lists must equal number of dimensions")
+
+        axis = None
+
+        sizes = list(self.mesh.dm.getSizes())
+        sizes.pop(axis)
+        extent = np.reshape(self.mesh.extent, (-1,2))
+        extent_bc = np.delete(extent, axis, axis=0)
+
+        gcoords = []
+        sizes = []
+        for i in self.mesh.dim:
+            if i != axis:
+                coords = self.mesh.grid_coords[i]
+                gcoords.append(coords)
+                sizes.append(coords.size)
+
+        ix = np.meshgrid(gcoords)
+        
+        # 0. divide wall into chunks based on the length of args
+        # 1. find if proc contains bc mask
+        # 2. map bc based on division of plane
+
+
+
+        bc_mask = self.mesh.bc[bc]['mask']
+        if bc_mask.any():
+            pass
+
+
+
     def linear_solve(self, matrix=None, rhs=None):
 
         if matrix == None:
