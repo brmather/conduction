@@ -626,7 +626,7 @@ class InversionND(object):
         return list(all_lith_variables)
 
 
-    def create_wall_map(self, wall):
+    def create_wall_map(self, wall, *args):
         coords = self.mesh.coords
         dim = self.mesh.dim
 
@@ -642,6 +642,10 @@ class InversionND(object):
             w0, w1 = wall[i]
             c0, c1 = bbox[i]
             m0, m1 = coords[:,i] == c0, coords[:,i] == c1
+
+        
+        self.boundary_index = boundary_index
+
 
     def map_wall(self, wall, *args):
         """
@@ -675,7 +679,7 @@ class InversionND(object):
         
         # 0. divide wall into chunks based on the length of args
         # 1. find if proc contains bc mask
-        # 2. map bc based on division of plane
+        # 2. map chunk to the bc
 
 
 
