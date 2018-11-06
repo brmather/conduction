@@ -110,8 +110,8 @@ def gradient_ad(df, *varargs, **kwargs):
         dgdf4 = 1./(2*dx[i])
         dgdf2 = -1./(2*dx[i])
 
-        df_ad[slice4] += dgdf4*df[i][slice1]
-        df_ad[slice2] += dgdf2*df[i][slice1]
+        df_ad[tuple(slice4)] += dgdf4*df[i][tuple(slice1)]
+        df_ad[tuple(slice2)] += dgdf2*df[i][tuple(slice1)]
 
         # Numerical differentiation: 1st order edges
         if edge_order == 1:
@@ -126,8 +126,8 @@ def gradient_ad(df, *varargs, **kwargs):
             dgdf2 = 1./dx_0
             dgdf3 = -1./dx_0
 
-            df_ad[slice2] += dgdf2*df[i][slice1]
-            df_ad[slice3] += dgdf3*df[i][slice1]
+            df_ad[tuple(slice2)] += dgdf2*df[i][tuple(slice1)]
+            df_ad[tuple(slice3)] += dgdf3*df[i][tuple(slice1)]
 
             slice1[axis] = -1
             slice2[axis] = -1
@@ -140,8 +140,8 @@ def gradient_ad(df, *varargs, **kwargs):
             dgdf2 = 1./dx_n
             dgdf3 = -1./dx_n
 
-            df_ad[slice2] += dgdf2*df[i][slice1]
-            df_ad[slice3] += dgdf3*df[i][slice1]
+            df_ad[tuple(slice2)] += dgdf2*df[i][tuple(slice1)]
+            df_ad[tuple(slice3)] += dgdf3*df[i][tuple(slice1)]
         
         # reset the slice object in this dimension to ":"
         slice1[axis] = slice(None)

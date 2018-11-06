@@ -169,7 +169,7 @@ class DiffusionND(ConductionND):
             flux = self.bc[wall]['flux']
             mask = self.bc[wall]['mask']
             if flux:
-                vec[mask] += val
+                vec[mask] = val
             else:
                 vec[mask] = val
 

@@ -11,7 +11,7 @@ mesh = DiffusionND((minX, minY), (maxX, maxY), (nx, ny), theta=1.0)
 
 # populate fields
 diffusivity = np.ones(mesh.nn)
-heat_sources = np.zeros(mesh.nn)
+heat_sources = np.ones(mesh.nn)
 mesh.update_properties(diffusivity, heat_sources)
 
 # set initial conditions
@@ -25,7 +25,8 @@ mesh.boundary_condition("maxY", 0.0, flux=False)
 dt = mesh.calculate_dt()
 print("Timestep size = {:e}".format(dt))
 
-nsteps = 50
+
+nsteps = 500
 T = mesh.timestep(nsteps, dt=dt)
 
 

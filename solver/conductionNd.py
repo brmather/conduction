@@ -421,7 +421,7 @@ class ConductionND(object):
         k = np.pad(u, self.width, 'constant', constant_values=0)
 
         for i in range(0, self.stencil_width):
-            obj = self.closure[i]
+            obj = tuple(self.closure[i])
 
             rows[i] = nodes
             cols[i] = index[obj].ravel()
@@ -562,17 +562,18 @@ class ConductionND(object):
         T = self.temperature[:]
         k = self.diffusivity[:] * -1
         divT = np.array(self.gradient(T))
+        q = []
         for i in range(0, self.dim):
             div = k*divT[i].ravel()
-            divT[i] = div
+            q.append(div)
 
-        return divT
+        return np.array(q)
 
 
-    def isosurface(self, vector, isoval, axis=0, interp='nearest'):
+    def isosurface(self, vector, isoval, axis=0, interp='nearest', return_indices=False):
         """
         Calculate an isosurface along a given axis
-        (So far this is only working for axis=0)
+        (So far this is only working for axis=0 and in serial)
 
         Parameters
         ----------
@@ -582,10 +583,13 @@ class ConductionND(object):
          interp : str, method can be either
             'nearest' - nearest neighbour interpolation
             'linear'  - linear interpolation
-        
+         return_indices : bool (default=False)
+            return the coordinate index
+
         Returns
         -------
          z_interp : isosurface the same size as the specified axis
+         indices  : int, same size as axis (if return_indices is True)
         """
         Vcube = vector.reshape(self.n)
         Zcube = self.coords[:,::-1][:,axis].reshape(self.n)
@@ -602,6 +606,7 @@ class ConductionND(object):
         idx.insert(axis, i0)
         z0 = Zcube[idx]
 
+        z_interp = z0
         if interp == 'linear':
             v0 = Vcube[idx]
             
@@ -617,9 +622,15 @@ class ConductionND(object):
             ratio -= ratio.min(axis=0)
             ratio /= ratio.max(axis=0)
             z_interp = ratio[0]*z1 + (1.0 - ratio[0])*z0
+
+        if return_indices:
+            Bcube = np.zeros_like(Vcube, dtype=bool)
+            idx[axis] = i0
+            Bcube[idx] = True
+            indices = np.where(Bcube.ravel())[0]
+            return z_interp, indices
+        else:
             return z_interp
-        elif interp == 'nearest':
-            return z0
 
 
     def save_mesh_to_hdf5(self, filename):
@@ -645,22 +656,23 @@ class ConductionND(object):
         ViewHDF5.view(obj=self.dm)
         ViewHDF5.destroy()
 
-        # Every processor is writing the same thing
-        f = h5py.File(filename, 'r+')
-        f.create_group('topology')
-        topo = f['topology']
+        if comm.rank == 0:
+            # Every processor is writing the same thing
+            f = h5py.File(filename, 'r+')
+            f.create_group('topology')
+            topo = f['topology']
 
-        # create attributes
-        extent = self.extent.reshape(self.dim,-1)
-        minCoord = extent[:,0]
-        maxCoord = extent[:,1]
-        shape = self.dm.getSizes()
+            # create attributes
+            extent = self.extent.reshape(self.dim,-1)
+            minCoord = extent[:,0]
+            maxCoord = extent[:,1]
+            shape = self.dm.getSizes()
 
-        topo.attrs.create('minCoord', minCoord[::-1])
-        topo.attrs.create('maxCoord', maxCoord[::-1])
-        topo.attrs.create('shape', np.array(shape)[::-1])
+            topo.attrs.create('minCoord', minCoord[::-1])
+            topo.attrs.create('maxCoord', maxCoord[::-1])
+            topo.attrs.create('shape', np.array(shape)[::-1])
 
-        f.close()
+            f.close()
 
 
     def save_field_to_hdf5(self, filename, *args, **kwargs):
