@@ -1,0 +1,9 @@
+include README.md
+include MANIFEST.in
+include CONTRIBUTING.md
+include COPYING
+include COPYING.LESSER
+include setup.cfg
+recursive-include conduction/ *.py
+recursive-include conduction/ *.ipynb
+include tests/*.py
