@@ -66,7 +66,12 @@ if __name__ == "__main__":
         python_requires=">=2.7, >=3.5",
         setup_requires=["pytest-runner", "webdav"],
         tests_require=["pytest", "webdav"],
-        packages=["conduction"],
+        packages=["conduction",
+                  "conduction.tools",
+                  "conduction.mesh",
+                  "conduction.solver",
+                  "conduction.inversion",
+                  "conduction.interpolation"],
         package_data={
             "conduction": [
                 "Examples/*.ipynb",
