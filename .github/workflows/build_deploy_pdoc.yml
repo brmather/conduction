@@ -18,7 +18,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda install pip 
-          conda install -c conda-forge numpy scipy sympy
+          conda install -c conda-forge numpy scipy
           conda install -c conda-forge petsc4py petsc mpi4py h5py
 
       - name: Install pdoc3
@@ -44,5 +44,5 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: docs # The folder the action should deploy.
+          FOLDER: docs/conduction # The folder the action should deploy.
           CLEAN: true # Automatically remove deleted files from the deploy branch
