@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>conduction.inversion.adjoint_models API documentation</title>
+<meta name="description" content="Copyright 2017 Ben Mather …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>conduction.inversion.adjoint_models</code></h1>
+</header>
+<section id="section-intro">
+<p>Copyright 2017 Ben Mather</p>
+<p>This file is part of Conduction <a href="https://git.dias.ie/itherc/conduction/">https://git.dias.ie/itherc/conduction/</a></p>
+<p>Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.</p>
+<p>Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the
+GNU Lesser General Public License for more details.</p>
+<p>You should have received a copy of the GNU Lesser General Public License
+along with Conduction.
+If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Copyright 2017 Ben Mather
+
+This file is part of Conduction &lt;https://git.dias.ie/itherc/conduction/&gt;
+
+Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.
+
+Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Conduction.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+&#34;&#34;&#34;
+
+import numpy as np
+
+def linear(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional linear model with flux lower BC
+    
+    Arguments
+    ---------
+     x  : [k_list, H_list, q0]
+     bc : boundary wall to invert
+
+    Returns
+    -------
+     cost : scalar
+    &#34;&#34;&#34;
+    k_list, H_list = np.array_split(x[:-1], 2)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H = self.map(k_list, H_list)
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    # solve
+    T = self.linear_solve(rhs=rhs)
+    q = self.heatflux(T, k0)
+    delT = self.gradient(T)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, q0=q0) # priors
+    return cost
+
+def linear_ad(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional linear model with flux lower BC
+    
+    Arguments
+    ---------
+     x  : [k_list, H_list, q0]
+     bc : boundary wall to invert
+
+    Returns
+    -------
+     cost : scalar
+     grad : [dk_list, dH_list, dq0]
+
+    &#34;&#34;&#34;
+    k_list, H_list = np.array_split(x[:-1], 2)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H = self.map(k_list, H_list)
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    # solve
+    T = self.linear_solve(rhs=rhs)
+    q = self.heatflux(T, k0)
+    delT = self.gradient(T)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, q0=q0) # priors
+    
+    ## AD ##
+    dk = np.zeros_like(H)
+    dH = np.zeros_like(H)
+    dT = np.zeros_like(H)
+    dq0 = np.array(0.0)
+    
+    # priors
+    dcdk_list = self.objective_routine_ad(k=k_list)
+    dcdH_list = self.objective_routine_ad(H=H_list)
+    dcdq0 = self.objective_routine_ad(q0=q0)
+    # observations
+    dT += self.objective_routine_ad(T=T)
+
+    dq = np.zeros_like(q)
+    dq[0] = self.objective_routine_ad(q=q[0])
+    
+    ddelT = np.zeros_like(delT)
+    ddelT[0] = self.objective_routine_ad(delT=delT[0])
+    
+
+    dTd = self.gradient_ad(ddelT, T)
+    dT += dTd
+    
+    dTq, dkq = self.heatflux_ad(dq, q, T, k0)
+    dT += dTq
+    dk += dkq
+    
+    # solve
+    dA, db = self.linear_solve_ad(T, dT)
+    
+    dk += dA
+    dH += -db
+    dz = self.grid_delta[-1]
+    lowerBC_mask = self.mesh.bc[&#34;min&#34;+bc][&#34;mask&#34;]
+    dq0 += np.sum(-db[lowerBC_mask]/dz/inv.ghost_weights[lowerBC_mask])
+    
+    # pack to lists
+    dk_list, dH_list = inv.map_ad(dk, dH)
+    dk_list += dcdk_list
+    dH_list += dcdH_list
+    dq0 += dcdq0
+    
+    dx = np.hstack([dk_list, dH_list, [dq0]])
+    
+    return cost, dx
+
+
+def nonlinear(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional nonlinear model with flux lower BC
+    Implements Hofmeister 1999 temperature-dependent
+    conductivity law
+
+    Arguments
+    ---------
+     x : [k_list, H_list, a_list, q0]
+
+    Returns
+    -------
+     cost : scalar
+
+    &#34;&#34;&#34;
+    def hofmeister1999(k0, T, a=0.25, c=0.0):
+        return k0*(298.0/T)**a + c*T**3
+
+    k_list, H_list, a_list = np.array_split(x[:-1], 3)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a = self.map(k_list, H_list, a_list)
+    k = k0.copy()
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    while error &gt; tolerance:
+        k_last = k.copy()
+        self.mesh.diffusivity[:] = k
+        T = self.linear_solve(rhs=rhs) # solve
+        k = hofmeister1999(k0, T, a)
+        error = np.absolute(k - k_last).max()
+        i += 1
+        
+    q = self.heatflux(T, k)
+    delT = self.gradient(T)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, q0=q0) # priors
+    return cost
+
+
+def nonlinear_ad(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional nonlinear model with flux lower BC
+    Implements Hofmeister 1999 temperature-dependent
+    conductivity law
+
+    Arguments
+    ---------
+     x : [k_list, H_list, a_list, q0]
+
+    Returns
+    -------
+     cost : scalar
+     grad : [dk_list, dH_list, da_list, dq0]
+    &#34;&#34;&#34;
+    def hofmeister1999(k0, T, a=0.25, c=0.0):
+        return k0*(298.0/T)**a + c*T**3
+    k_list, H_list, a_list = np.array_split(x[:-1], 3)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a = self.map(k_list, H_list, a_list)
+    k = [k0.copy()]
+    T = [None]
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    self.mesh.temperature._gdata.set(0.)
+    while error &gt; tolerance:
+        self.mesh.diffusivity[:] = k[i]
+        # solve
+        Ti = self.linear_solve(rhs=rhs)
+        ki = hofmeister1999(k0, Ti, a)
+        T.append(Ti.copy())
+        k.append(ki.copy())
+        error = np.absolute(k[-1] - k[-2]).max()
+        i += 1
+
+    q = self.heatflux(T[-1], k[-1])
+    delT = self.gradient(T[-1])
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T[-1], delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, q0=q0) # priors
+    
+    ## AD ##
+    dk = np.zeros_like(H)
+    dH = np.zeros_like(H)
+    dT = np.zeros_like(H)
+    da = np.zeros_like(H)
+    dk0 = np.zeros_like(H)
+    dq0 = np.array(0.0)
+    
+    # priors
+    dcdk_list = self.objective_routine_ad(k=k_list)
+    dcdH_list = self.objective_routine_ad(H=H_list)
+    dcda_list = self.objective_routine_ad(a=a_list)
+    dcdq0 = self.objective_routine_ad(q0=q0)
+    # observations
+    dT += self.objective_routine_ad(T=T[-1])
+
+    dq = np.zeros_like(q)
+    dq[0] = self.objective_routine_ad(q=q[0])
+    
+    ddelT = np.zeros_like(delT)
+    ddelT[0] = self.objective_routine_ad(delT=delT[0])
+    
+
+    dTd = self.gradient_ad(ddelT, T[-1])
+    dT += dTd
+    
+    dTq, dkq = self.heatflux_ad(dq, q, T[-1], k[-1])
+    dT += dTq
+    dk += dkq
+    
+
+    # solve
+    for j in range(i):
+        dkda = np.log(298.0/T[-1-j])*k0*(298.0/T[-1-j])**a
+        dkdk0 = (298.0/T[-1-j])**a
+        dkdT = -a*k0/T[-1-j]*(298.0/T[-1-j])**a
+        
+        dk0 += dkdk0*dk
+        dT  += dkdT*dk
+        da  += dkda*dk
+        print(dT.min(), dT.max(), dk.min(), dk.max())
+        
+        dk.fill(0.0)
+        
+        self.mesh.diffusivity[:] = k[-1-j]
+        dA, db = self.linear_solve_ad(T[-1-j], dT)
+        dk += dA
+        dH += -db
+        dz = self.grid_delta[-1]
+        lowerBC_mask = self.mesh.bc[&#34;min&#34;+bc][&#34;mask&#34;]
+        dq0 += np.sum(-db[lowerBC_mask]/dz/inv.ghost_weights[lowerBC_mask])
+        
+        dT.fill(0.0)
+        
+    dk0 += dk
+        
+    # pack to lists
+    dk_list, dH_list, da_list = inv.map_ad(dk0, dH, da)
+    dk_list += dcdk_list
+    dH_list += dcdH_list
+    da_list += dcda_list
+    dq0 += dcdq0
+    
+    dx = np.hstack([dk_list, dH_list, da_list, [dq0]])
+    
+    return cost, dx
+
+def velocity_nonlinear(x, self, bc=&#39;Z&#39;):
+    k_list, H_list, a_list, psi_list, B_list = np.array_split(x[:-1], 5)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a, psi, B = self.map(k_list, H_list, a_list, psi_list, B_list)
+    k = k0.copy()
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    while error &gt; tolerance:
+        k_last = k.copy()
+        self.mesh.diffusivity[:] = k
+        T = self.linear_solve(rhs=rhs) # solve
+        k = hofmeister1999(k0, T, a)
+        error = np.absolute(k - k_last).max()
+        i += 1
+    print(&#34;{} iterations&#34;.format(i))
+        
+    q = self.heatflux(T, k)
+    delT = self.gradient(T)
+    rho, Vsp, dVspdT = self.lookup_velocity()
+    P = rho*np.abs(self.mesh.coords[:,-1])*9.806*1e-5
+    
+    # attenuation
+    Q = attenuation(Vsp, P, psi, B)
+    Vs = Vsp * (1.0 - 0.5*(1.0/np.tan(np.pi*0.26/2.0))*Q)
+    self.Vsp = Vsp
+    self.Vs = Vs
+    self.Q = Q
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0], Vs=Vs) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, psi=psi_list, B=B_list, q0=q0) # priors
+    return cost
+
+def velocity_nonlinear_ad(x, self, bc=&#39;Z&#39;):
+    k_list, H_list, a_list, psi_list, B_list = np.array_split(x[:-1], 5)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a, psi, B = self.map(k_list, H_list, a_list, psi_list, B_list)
+    k = [k0.copy()]
+    T = [None]
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    self.mesh.temperature._gdata.set(0.)
+    while error &gt; tolerance:
+        self.mesh.diffusivity[:] = k[i]
+        # solve
+        Ti = self.linear_solve(rhs=rhs)
+        ki = hofmeister1999(k0, Ti, a)
+        T.append(Ti.copy())
+        k.append(ki.copy())
+        error = np.absolute(k[-1] - k[-2]).max()
+        i += 1
+    print(&#34;{} iterations&#34;.format(i))
+
+    q = self.heatflux(T[-1], k[-1])
+    delT = self.gradient(T[-1])
+    rho, Vsp, dVspdT = self.lookup_velocity()
+    P = rho*np.abs(self.mesh.coords[:,-1])*9.806*1e-5
+    
+    # attenuation
+    Q = attenuation(Vsp, P, psi, B)
+    Vs = Vsp * (1.0 - 0.5*(1.0/np.tan(np.pi*0.26/2.0))*Q)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T[-1], delT=delT[0], Vs=Vs) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, q0=q0) # priors
+    
+    ## AD ##
+    dk = np.zeros_like(H)
+    dH = np.zeros_like(H)
+    dT = np.zeros_like(H)
+    da = np.zeros_like(H)
+    dk0 = np.zeros_like(H)
+    dq0 = np.array(0.0)
+    dpsi = np.zeros_like(H)
+    dB = np.zeros_like(H)
+    dQ = np.zeros_like(H)
+    
+    # priors
+    dcdk_list = self.objective_routine_ad(k=k_list)
+    dcdH_list = self.objective_routine_ad(H=H_list)
+    dcda_list = self.objective_routine_ad(a=a_list)
+    dcdpsi_list = self.objective_routine_ad(psi=psi_list)
+    dcdB_list = self.objective_routine_ad(B=B_list)
+    dcdq0 = self.objective_routine_ad(q0=q0)
+    # observations
+    dT += self.objective_routine_ad(T=T[-1])
+
+    dq = np.zeros_like(q)
+    dq[0] = self.objective_routine_ad(q=q[0])
+    
+    ddelT = np.zeros_like(delT)
+    ddelT[0] = self.objective_routine_ad(delT=delT[0])
+    
+    dVs = self.objective_routine_ad(Vs=Vs)
+    dVsdQ = -Vsp*0.5*(1.0/np.tan(np.pi*0.26/2.0))
+    dVsdT = dVspdT*(1.0 - 0.5*(1.0/np.tan(np.pi*0.26/2.0))*Q)
+    dQdpsi, dQdB = attenuation_ad(Vsp, P, psi, B)
+    
+    dQ += dVsdQ*dVs
+    dT += dVsdT*dVs
+    dpsi += dQdpsi*dQ
+    dB += dQdB*dQ
+    
+
+    dTd = self.gradient_ad(ddelT, T[-1])
+    dT += dTd
+    
+    dTq, dkq = self.heatflux_ad(dq, q, T[-1], k[-1])
+    dT += dTq
+    dk += dkq
+    
+
+    # solve
+    for j in xrange(i):
+        dkdT, dkdk0, dkda = hofmeister1999_ad(T[-1-j], k0, a)
+        
+        dk0 += dkdk0*dk
+        dT  += dkdT*dk
+        da  += dkda*dk
+        
+        dk.fill(0.0)
+        
+
+        self.mesh.diffusivity[:] = k[-1-j]
+        dA, db = self.linear_solve_ad(T[-1-j], dT)
+
+        dk += dA
+        dH += -db
+        dz = self.grid_delta[-1]
+        lowerBC_mask = self.mesh.bc[&#34;min&#34;+bc][&#34;mask&#34;]
+        dq0 += np.sum(-db[lowerBC_mask]/dz/inv.ghost_weights[lowerBC_mask])
+        
+        dT.fill(0.0)
+        
+    dk0 += dk
+        
+    # pack to lists
+    dk_list, dH_list, da_list, dpsi_list, dB_list = inv.map_ad(dk0, dH, da, dpsi, dB)
+    dk_list += dcdk_list
+    dH_list += dcdH_list
+    da_list += dcda_list
+    dpsi_list += dcdpsi_list
+    dB_list += dcdB_list
+    dq0 += dcdq0
+    
+    dx = np.hstack([dk_list, dH_list, da_list, dpsi_list, dB_list, [dq0]])
+    
+    return cost, dx</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="conduction.inversion.adjoint_models.linear"><code class="name flex">
+<span>def <span class="ident">linear</span></span>(<span>x, self, bc='Z')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>N-dimensional linear model with flux lower BC</p>
+<h2 id="arguments">Arguments</h2>
+<p>x
+: [k_list, H_list, q0]
+bc : boundary wall to invert</p>
+<h2 id="returns">Returns</h2>
+<p>cost : scalar</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def linear(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional linear model with flux lower BC
+    
+    Arguments
+    ---------
+     x  : [k_list, H_list, q0]
+     bc : boundary wall to invert
+
+    Returns
+    -------
+     cost : scalar
+    &#34;&#34;&#34;
+    k_list, H_list = np.array_split(x[:-1], 2)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H = self.map(k_list, H_list)
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    # solve
+    T = self.linear_solve(rhs=rhs)
+    q = self.heatflux(T, k0)
+    delT = self.gradient(T)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, q0=q0) # priors
+    return cost</code></pre>
+</details>
+</dd>
+<dt id="conduction.inversion.adjoint_models.linear_ad"><code class="name flex">
+<span>def <span class="ident">linear_ad</span></span>(<span>x, self, bc='Z')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>N-dimensional linear model with flux lower BC</p>
+<h2 id="arguments">Arguments</h2>
+<p>x
+: [k_list, H_list, q0]
+bc : boundary wall to invert</p>
+<h2 id="returns">Returns</h2>
+<p>cost : scalar
+grad : [dk_list, dH_list, dq0]</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def linear_ad(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional linear model with flux lower BC
+    
+    Arguments
+    ---------
+     x  : [k_list, H_list, q0]
+     bc : boundary wall to invert
+
+    Returns
+    -------
+     cost : scalar
+     grad : [dk_list, dH_list, dq0]
+
+    &#34;&#34;&#34;
+    k_list, H_list = np.array_split(x[:-1], 2)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H = self.map(k_list, H_list)
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    # solve
+    T = self.linear_solve(rhs=rhs)
+    q = self.heatflux(T, k0)
+    delT = self.gradient(T)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, q0=q0) # priors
+    
+    ## AD ##
+    dk = np.zeros_like(H)
+    dH = np.zeros_like(H)
+    dT = np.zeros_like(H)
+    dq0 = np.array(0.0)
+    
+    # priors
+    dcdk_list = self.objective_routine_ad(k=k_list)
+    dcdH_list = self.objective_routine_ad(H=H_list)
+    dcdq0 = self.objective_routine_ad(q0=q0)
+    # observations
+    dT += self.objective_routine_ad(T=T)
+
+    dq = np.zeros_like(q)
+    dq[0] = self.objective_routine_ad(q=q[0])
+    
+    ddelT = np.zeros_like(delT)
+    ddelT[0] = self.objective_routine_ad(delT=delT[0])
+    
+
+    dTd = self.gradient_ad(ddelT, T)
+    dT += dTd
+    
+    dTq, dkq = self.heatflux_ad(dq, q, T, k0)
+    dT += dTq
+    dk += dkq
+    
+    # solve
+    dA, db = self.linear_solve_ad(T, dT)
+    
+    dk += dA
+    dH += -db
+    dz = self.grid_delta[-1]
+    lowerBC_mask = self.mesh.bc[&#34;min&#34;+bc][&#34;mask&#34;]
+    dq0 += np.sum(-db[lowerBC_mask]/dz/inv.ghost_weights[lowerBC_mask])
+    
+    # pack to lists
+    dk_list, dH_list = inv.map_ad(dk, dH)
+    dk_list += dcdk_list
+    dH_list += dcdH_list
+    dq0 += dcdq0
+    
+    dx = np.hstack([dk_list, dH_list, [dq0]])
+    
+    return cost, dx</code></pre>
+</details>
+</dd>
+<dt id="conduction.inversion.adjoint_models.nonlinear"><code class="name flex">
+<span>def <span class="ident">nonlinear</span></span>(<span>x, self, bc='Z')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>N-dimensional nonlinear model with flux lower BC
+Implements Hofmeister 1999 temperature-dependent
+conductivity law</p>
+<h2 id="arguments">Arguments</h2>
+<p>x : [k_list, H_list, a_list, q0]</p>
+<h2 id="returns">Returns</h2>
+<p>cost : scalar</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def nonlinear(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional nonlinear model with flux lower BC
+    Implements Hofmeister 1999 temperature-dependent
+    conductivity law
+
+    Arguments
+    ---------
+     x : [k_list, H_list, a_list, q0]
+
+    Returns
+    -------
+     cost : scalar
+
+    &#34;&#34;&#34;
+    def hofmeister1999(k0, T, a=0.25, c=0.0):
+        return k0*(298.0/T)**a + c*T**3
+
+    k_list, H_list, a_list = np.array_split(x[:-1], 3)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a = self.map(k_list, H_list, a_list)
+    k = k0.copy()
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    while error &gt; tolerance:
+        k_last = k.copy()
+        self.mesh.diffusivity[:] = k
+        T = self.linear_solve(rhs=rhs) # solve
+        k = hofmeister1999(k0, T, a)
+        error = np.absolute(k - k_last).max()
+        i += 1
+        
+    q = self.heatflux(T, k)
+    delT = self.gradient(T)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, q0=q0) # priors
+    return cost</code></pre>
+</details>
+</dd>
+<dt id="conduction.inversion.adjoint_models.nonlinear_ad"><code class="name flex">
+<span>def <span class="ident">nonlinear_ad</span></span>(<span>x, self, bc='Z')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>N-dimensional nonlinear model with flux lower BC
+Implements Hofmeister 1999 temperature-dependent
+conductivity law</p>
+<h2 id="arguments">Arguments</h2>
+<p>x : [k_list, H_list, a_list, q0]</p>
+<h2 id="returns">Returns</h2>
+<p>cost : scalar
+grad : [dk_list, dH_list, da_list, dq0]</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def nonlinear_ad(x, self, bc=&#39;Z&#39;):
+    &#34;&#34;&#34;
+    N-dimensional nonlinear model with flux lower BC
+    Implements Hofmeister 1999 temperature-dependent
+    conductivity law
+
+    Arguments
+    ---------
+     x : [k_list, H_list, a_list, q0]
+
+    Returns
+    -------
+     cost : scalar
+     grad : [dk_list, dH_list, da_list, dq0]
+    &#34;&#34;&#34;
+    def hofmeister1999(k0, T, a=0.25, c=0.0):
+        return k0*(298.0/T)**a + c*T**3
+    k_list, H_list, a_list = np.array_split(x[:-1], 3)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a = self.map(k_list, H_list, a_list)
+    k = [k0.copy()]
+    T = [None]
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    self.mesh.temperature._gdata.set(0.)
+    while error &gt; tolerance:
+        self.mesh.diffusivity[:] = k[i]
+        # solve
+        Ti = self.linear_solve(rhs=rhs)
+        ki = hofmeister1999(k0, Ti, a)
+        T.append(Ti.copy())
+        k.append(ki.copy())
+        error = np.absolute(k[-1] - k[-2]).max()
+        i += 1
+
+    q = self.heatflux(T[-1], k[-1])
+    delT = self.gradient(T[-1])
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T[-1], delT=delT[0]) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, q0=q0) # priors
+    
+    ## AD ##
+    dk = np.zeros_like(H)
+    dH = np.zeros_like(H)
+    dT = np.zeros_like(H)
+    da = np.zeros_like(H)
+    dk0 = np.zeros_like(H)
+    dq0 = np.array(0.0)
+    
+    # priors
+    dcdk_list = self.objective_routine_ad(k=k_list)
+    dcdH_list = self.objective_routine_ad(H=H_list)
+    dcda_list = self.objective_routine_ad(a=a_list)
+    dcdq0 = self.objective_routine_ad(q0=q0)
+    # observations
+    dT += self.objective_routine_ad(T=T[-1])
+
+    dq = np.zeros_like(q)
+    dq[0] = self.objective_routine_ad(q=q[0])
+    
+    ddelT = np.zeros_like(delT)
+    ddelT[0] = self.objective_routine_ad(delT=delT[0])
+    
+
+    dTd = self.gradient_ad(ddelT, T[-1])
+    dT += dTd
+    
+    dTq, dkq = self.heatflux_ad(dq, q, T[-1], k[-1])
+    dT += dTq
+    dk += dkq
+    
+
+    # solve
+    for j in range(i):
+        dkda = np.log(298.0/T[-1-j])*k0*(298.0/T[-1-j])**a
+        dkdk0 = (298.0/T[-1-j])**a
+        dkdT = -a*k0/T[-1-j]*(298.0/T[-1-j])**a
+        
+        dk0 += dkdk0*dk
+        dT  += dkdT*dk
+        da  += dkda*dk
+        print(dT.min(), dT.max(), dk.min(), dk.max())
+        
+        dk.fill(0.0)
+        
+        self.mesh.diffusivity[:] = k[-1-j]
+        dA, db = self.linear_solve_ad(T[-1-j], dT)
+        dk += dA
+        dH += -db
+        dz = self.grid_delta[-1]
+        lowerBC_mask = self.mesh.bc[&#34;min&#34;+bc][&#34;mask&#34;]
+        dq0 += np.sum(-db[lowerBC_mask]/dz/inv.ghost_weights[lowerBC_mask])
+        
+        dT.fill(0.0)
+        
+    dk0 += dk
+        
+    # pack to lists
+    dk_list, dH_list, da_list = inv.map_ad(dk0, dH, da)
+    dk_list += dcdk_list
+    dH_list += dcdH_list
+    da_list += dcda_list
+    dq0 += dcdq0
+    
+    dx = np.hstack([dk_list, dH_list, da_list, [dq0]])
+    
+    return cost, dx</code></pre>
+</details>
+</dd>
+<dt id="conduction.inversion.adjoint_models.velocity_nonlinear"><code class="name flex">
+<span>def <span class="ident">velocity_nonlinear</span></span>(<span>x, self, bc='Z')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def velocity_nonlinear(x, self, bc=&#39;Z&#39;):
+    k_list, H_list, a_list, psi_list, B_list = np.array_split(x[:-1], 5)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a, psi, B = self.map(k_list, H_list, a_list, psi_list, B_list)
+    k = k0.copy()
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    while error &gt; tolerance:
+        k_last = k.copy()
+        self.mesh.diffusivity[:] = k
+        T = self.linear_solve(rhs=rhs) # solve
+        k = hofmeister1999(k0, T, a)
+        error = np.absolute(k - k_last).max()
+        i += 1
+    print(&#34;{} iterations&#34;.format(i))
+        
+    q = self.heatflux(T, k)
+    delT = self.gradient(T)
+    rho, Vsp, dVspdT = self.lookup_velocity()
+    P = rho*np.abs(self.mesh.coords[:,-1])*9.806*1e-5
+    
+    # attenuation
+    Q = attenuation(Vsp, P, psi, B)
+    Vs = Vsp * (1.0 - 0.5*(1.0/np.tan(np.pi*0.26/2.0))*Q)
+    self.Vsp = Vsp
+    self.Vs = Vs
+    self.Q = Q
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T, delT=delT[0], Vs=Vs) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, psi=psi_list, B=B_list, q0=q0) # priors
+    return cost</code></pre>
+</details>
+</dd>
+<dt id="conduction.inversion.adjoint_models.velocity_nonlinear_ad"><code class="name flex">
+<span>def <span class="ident">velocity_nonlinear_ad</span></span>(<span>x, self, bc='Z')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def velocity_nonlinear_ad(x, self, bc=&#39;Z&#39;):
+    k_list, H_list, a_list, psi_list, B_list = np.array_split(x[:-1], 5)
+    q0 = x[-1]
+    
+    # map to mesh
+    k0, H, a, psi, B = self.map(k_list, H_list, a_list, psi_list, B_list)
+    k = [k0.copy()]
+    T = [None]
+    
+    self.mesh.update_properties(k0, H)
+    self.mesh.boundary_condition(&#34;max&#34;+bc, 298.0, flux=False)
+    self.mesh.boundary_condition(&#34;min&#34;+bc, q0, flux=True)
+    rhs = self.mesh.construct_rhs()
+    
+    error = 10.
+    tolerance = 1e-5
+    i = 0
+    self.mesh.temperature._gdata.set(0.)
+    while error &gt; tolerance:
+        self.mesh.diffusivity[:] = k[i]
+        # solve
+        Ti = self.linear_solve(rhs=rhs)
+        ki = hofmeister1999(k0, Ti, a)
+        T.append(Ti.copy())
+        k.append(ki.copy())
+        error = np.absolute(k[-1] - k[-2]).max()
+        i += 1
+    print(&#34;{} iterations&#34;.format(i))
+
+    q = self.heatflux(T[-1], k[-1])
+    delT = self.gradient(T[-1])
+    rho, Vsp, dVspdT = self.lookup_velocity()
+    P = rho*np.abs(self.mesh.coords[:,-1])*9.806*1e-5
+    
+    # attenuation
+    Q = attenuation(Vsp, P, psi, B)
+    Vs = Vsp * (1.0 - 0.5*(1.0/np.tan(np.pi*0.26/2.0))*Q)
+    
+    cost = 0.0
+    cost += self.objective_routine(q=q[0], T=T[-1], delT=delT[0], Vs=Vs) # observations
+    cost += self.objective_routine(k=k_list, H=H_list, a=a_list, q0=q0) # priors
+    
+    ## AD ##
+    dk = np.zeros_like(H)
+    dH = np.zeros_like(H)
+    dT = np.zeros_like(H)
+    da = np.zeros_like(H)
+    dk0 = np.zeros_like(H)
+    dq0 = np.array(0.0)
+    dpsi = np.zeros_like(H)
+    dB = np.zeros_like(H)
+    dQ = np.zeros_like(H)
+    
+    # priors
+    dcdk_list = self.objective_routine_ad(k=k_list)
+    dcdH_list = self.objective_routine_ad(H=H_list)
+    dcda_list = self.objective_routine_ad(a=a_list)
+    dcdpsi_list = self.objective_routine_ad(psi=psi_list)
+    dcdB_list = self.objective_routine_ad(B=B_list)
+    dcdq0 = self.objective_routine_ad(q0=q0)
+    # observations
+    dT += self.objective_routine_ad(T=T[-1])
+
+    dq = np.zeros_like(q)
+    dq[0] = self.objective_routine_ad(q=q[0])
+    
+    ddelT = np.zeros_like(delT)
+    ddelT[0] = self.objective_routine_ad(delT=delT[0])
+    
+    dVs = self.objective_routine_ad(Vs=Vs)
+    dVsdQ = -Vsp*0.5*(1.0/np.tan(np.pi*0.26/2.0))
+    dVsdT = dVspdT*(1.0 - 0.5*(1.0/np.tan(np.pi*0.26/2.0))*Q)
+    dQdpsi, dQdB = attenuation_ad(Vsp, P, psi, B)
+    
+    dQ += dVsdQ*dVs
+    dT += dVsdT*dVs
+    dpsi += dQdpsi*dQ
+    dB += dQdB*dQ
+    
+
+    dTd = self.gradient_ad(ddelT, T[-1])
+    dT += dTd
+    
+    dTq, dkq = self.heatflux_ad(dq, q, T[-1], k[-1])
+    dT += dTq
+    dk += dkq
+    
+
+    # solve
+    for j in xrange(i):
+        dkdT, dkdk0, dkda = hofmeister1999_ad(T[-1-j], k0, a)
+        
+        dk0 += dkdk0*dk
+        dT  += dkdT*dk
+        da  += dkda*dk
+        
+        dk.fill(0.0)
+        
+
+        self.mesh.diffusivity[:] = k[-1-j]
+        dA, db = self.linear_solve_ad(T[-1-j], dT)
+
+        dk += dA
+        dH += -db
+        dz = self.grid_delta[-1]
+        lowerBC_mask = self.mesh.bc[&#34;min&#34;+bc][&#34;mask&#34;]
+        dq0 += np.sum(-db[lowerBC_mask]/dz/inv.ghost_weights[lowerBC_mask])
+        
+        dT.fill(0.0)
+        
+    dk0 += dk
+        
+    # pack to lists
+    dk_list, dH_list, da_list, dpsi_list, dB_list = inv.map_ad(dk0, dH, da, dpsi, dB)
+    dk_list += dcdk_list
+    dH_list += dcdH_list
+    da_list += dcda_list
+    dpsi_list += dcdpsi_list
+    dB_list += dcdB_list
+    dq0 += dcdq0
+    
+    dx = np.hstack([dk_list, dH_list, da_list, dpsi_list, dB_list, [dq0]])
+    
+    return cost, dx</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="conduction.inversion" href="index.html">conduction.inversion</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="conduction.inversion.adjoint_models.linear" href="#conduction.inversion.adjoint_models.linear">linear</a></code></li>
+<li><code><a title="conduction.inversion.adjoint_models.linear_ad" href="#conduction.inversion.adjoint_models.linear_ad">linear_ad</a></code></li>
+<li><code><a title="conduction.inversion.adjoint_models.nonlinear" href="#conduction.inversion.adjoint_models.nonlinear">nonlinear</a></code></li>
+<li><code><a title="conduction.inversion.adjoint_models.nonlinear_ad" href="#conduction.inversion.adjoint_models.nonlinear_ad">nonlinear_ad</a></code></li>
+<li><code><a title="conduction.inversion.adjoint_models.velocity_nonlinear" href="#conduction.inversion.adjoint_models.velocity_nonlinear">velocity_nonlinear</a></code></li>
+<li><code><a title="conduction.inversion.adjoint_models.velocity_nonlinear_ad" href="#conduction.inversion.adjoint_models.velocity_nonlinear_ad">velocity_nonlinear_ad</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>conduction.solver.diffusionNd API documentation</title>
+<meta name="description" content="Copyright 2017 Ben Mather …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>conduction.solver.diffusionNd</code></h1>
+</header>
+<section id="section-intro">
+<p>Copyright 2017 Ben Mather</p>
+<p>This file is part of Conduction <a href="https://git.dias.ie/itherc/conduction/">https://git.dias.ie/itherc/conduction/</a></p>
+<p>Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.</p>
+<p>Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the
+GNU Lesser General Public License for more details.</p>
+<p>You should have received a copy of the GNU Lesser General Public License
+along with Conduction.
+If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Copyright 2017 Ben Mather
+
+This file is part of Conduction &lt;https://git.dias.ie/itherc/conduction/&gt;
+
+Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.
+
+Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Conduction.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+&#34;&#34;&#34;
+
+try: range = xrange
+except: pass
+
+import numpy as np
+from petsc4py import PETSc
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+
+from . import ConductionND
+
+class DiffusionND(ConductionND):
+    &#34;&#34;&#34;
+    Implicit N-dimensional solver for the time-dependent heat equation
+    over a structured grid using PETSc data structures (inherits ConductionND).
+
+    Parameters
+    ----------
+     minCoord : tuple, minimum Cartesian coordinates at edge of domain
+     maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+     res      : tuple, resolution in each dimension
+     theta    : float, diffusion number that controls time discretisation [0, 1]
+        0.0 = backward Euler
+        0.5 = Crank-Nicholson (default, most accurate)
+        1.0 = forward Euler
+     kwargs   : dict, keyword arguments to pass to KSP method and preconditioner
+        see PETSc documentaion for KSPType and PCType options...
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html
+    &#34;&#34;&#34;
+    def __init__(self, minCoord, maxCoord, res, theta=0.5, **kwargs):
+
+        super(DiffusionND, self).__init__(minCoord, maxCoord, res, **kwargs)
+
+        self.temperature_new = self.create_meshVariable(&#34;temperature_new&#34;)
+
+        # theta rule in time, centred differences in space
+        if theta &lt; 0 or theta &gt; 1:
+            raise ValueError(&#34;theta must be in the range [0, 1]&#34;)
+        self.theta = theta
+
+        # get maximum spacing
+        delta = np.zeros(self.dim)
+        all_delta = np.zeros(self.dim)
+        for i in range(self.dim):
+            dx = np.diff(self.grid_coords[i])
+            delta[i] = dx.max()
+
+        comm.Allreduce([delta, MPI.DOUBLE], [all_delta, MPI.DOUBLE], op=MPI.MAX)
+        self.delta = all_delta
+
+        self._ldiag = self.lvec.duplicate()
+
+
+    def calculate_dt(self):
+        &#34;&#34;&#34;
+        Calculate optimal timestep size
+        &#34;&#34;&#34;
+        kappa = self.diffusivity
+        delta = self.delta
+        max_kappa = kappa._gdata.max()[1]
+        dt = np.sum(delta**2)/(4.0*max_kappa)
+        return dt
+
+
+    def construct_matrix_dt(self, in_place=True, derivative=False, scale=1.0):
+        &#34;&#34;&#34;
+        Construct the coefficient matrix
+        i.e. matrix A in Ax = b
+
+        This extends the ConductionND method by including time-dependence
+        through a scale variable.
+        &#34;&#34;&#34;
+        ldiag = self._ldiag
+        mat = self.mat
+
+        if scale &gt; 0:
+            mat = super(DiffusionND, self).construct_matrix(in_place, derivative)
+            mat.scale(-scale)
+        else:
+            # preallocate identity matrix
+            diag = self.gvec.duplicate()
+            diag.set(1.0)
+            mat.assemblyBegin()
+            mat.setDiagonal(diag)
+            mat.assemblyEnd()
+            mat.scale(0.0)
+
+        diag = mat.getDiagonal()
+        diag += 1.0 # add self node
+
+        # overwrite Dirichlet BCs
+        self.dm.globalToLocal(diag, ldiag)
+        ldiag.array[self.dirichlet_mask] = 1.0
+        self.dm.localToGlobal(ldiag, diag)
+        mat.setDiagonal(diag)
+        return mat
+
+
+    def construct_rhs_dt(self, in_place=True, scale=1.0):
+        &#34;&#34;&#34;
+        Construct the right-hand-side vector
+        i.e. vector b in Ax = b
+
+        This extends the ConductionND method by including time-dependence
+        through a scale variable.
+        &#34;&#34;&#34;
+        if in_place:
+            rhs = self.rhs
+        else:
+            rhs = self.create_meshVariable(&#39;rhs&#39;)
+
+        if scale &gt; 0:
+            # vectorise stencil similar to matrix construction
+            n = self.n
+            cols = self.cols
+            index = self.index
+            vals = self.vals
+
+            temp  = self.temperature[:].reshape(n)
+            kappa = self.diffusivity[:].reshape(n)
+            k = np.pad(kappa, self.width, &#39;constant&#39;, constant_values=0)
+            T = np.pad(temp,  self.width, &#39;constant&#39;, constant_values=0)
+
+            for i in range(0, self.stencil_width):
+                obj = tuple(self.closure[i])
+
+                cols[i] = index[obj].ravel()
+
+                distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+                distance[distance==0] = 1e-12 # protect against dividing by zero
+                delta = scale/distance**2
+
+                vals[i] = delta*(0.5*(k[obj] + kappa)*(T[obj] - temp)).ravel()
+            
+            # zero off-grid coordinates
+            vals[cols &lt; 0] = 0.0
+            vals[-1] = 0.0 # centre point
+            vec = vals.sum(axis=0)
+
+            # add heat sources
+            vec += scale*self.heat_sources[:]
+        else:
+            vec = np.zeros(self.nn)
+
+        # add current temperature
+        vec += self.temperature[:]
+
+        # enforce BCs
+        for wall in self.bc:
+            val  = self.bc[wall][&#39;val&#39;]
+            flux = self.bc[wall][&#39;flux&#39;]
+            mask = self.bc[wall][&#39;mask&#39;]
+            if flux:
+                vec[mask] = val
+            else:
+                vec[mask] = val
+
+        rhs[:] = vec
+        return rhs
+
+
+    def timestep(self, steps=1, dt=None):
+        &#34;&#34;&#34;
+        Solve a timestep
+        &#34;&#34;&#34;
+        if type(dt) == type(None):
+            dt = self.calculate_dt()
+
+        theta = self.theta
+        Lscale = dt*theta
+        Rscale = dt*(1.0 - theta)
+
+        # construct a constant matrix
+        mat = self.construct_matrix_dt(scale=Lscale)
+
+        for step in range(steps):
+            rhs = self.construct_rhs_dt(scale=Rscale)
+            T = self.solve(mat, rhs)
+
+        return T</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="conduction.solver.diffusionNd.DiffusionND"><code class="flex name class">
+<span>class <span class="ident">DiffusionND</span></span>
+<span>(</span><span>minCoord, maxCoord, res, theta=0.5, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implicit N-dimensional solver for the time-dependent heat equation
+over a structured grid using PETSc data structures (inherits ConductionND).</p>
+<h2 id="parameters">Parameters</h2>
+<p>minCoord : tuple, minimum Cartesian coordinates at edge of domain
+maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+res
+: tuple, resolution in each dimension
+theta
+: float, diffusion number that controls time discretisation [0, 1]
+0.0 = backward Euler
+0.5 = Crank-Nicholson (default, most accurate)
+1.0 = forward Euler
+kwargs
+: dict, keyword arguments to pass to KSP method and preconditioner
+see PETSc documentaion for KSPType and PCType options&hellip;
+<a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html">http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html</a>
+<a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html">http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DiffusionND(ConductionND):
+    &#34;&#34;&#34;
+    Implicit N-dimensional solver for the time-dependent heat equation
+    over a structured grid using PETSc data structures (inherits ConductionND).
+
+    Parameters
+    ----------
+     minCoord : tuple, minimum Cartesian coordinates at edge of domain
+     maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+     res      : tuple, resolution in each dimension
+     theta    : float, diffusion number that controls time discretisation [0, 1]
+        0.0 = backward Euler
+        0.5 = Crank-Nicholson (default, most accurate)
+        1.0 = forward Euler
+     kwargs   : dict, keyword arguments to pass to KSP method and preconditioner
+        see PETSc documentaion for KSPType and PCType options...
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html
+    &#34;&#34;&#34;
+    def __init__(self, minCoord, maxCoord, res, theta=0.5, **kwargs):
+
+        super(DiffusionND, self).__init__(minCoord, maxCoord, res, **kwargs)
+
+        self.temperature_new = self.create_meshVariable(&#34;temperature_new&#34;)
+
+        # theta rule in time, centred differences in space
+        if theta &lt; 0 or theta &gt; 1:
+            raise ValueError(&#34;theta must be in the range [0, 1]&#34;)
+        self.theta = theta
+
+        # get maximum spacing
+        delta = np.zeros(self.dim)
+        all_delta = np.zeros(self.dim)
+        for i in range(self.dim):
+            dx = np.diff(self.grid_coords[i])
+            delta[i] = dx.max()
+
+        comm.Allreduce([delta, MPI.DOUBLE], [all_delta, MPI.DOUBLE], op=MPI.MAX)
+        self.delta = all_delta
+
+        self._ldiag = self.lvec.duplicate()
+
+
+    def calculate_dt(self):
+        &#34;&#34;&#34;
+        Calculate optimal timestep size
+        &#34;&#34;&#34;
+        kappa = self.diffusivity
+        delta = self.delta
+        max_kappa = kappa._gdata.max()[1]
+        dt = np.sum(delta**2)/(4.0*max_kappa)
+        return dt
+
+
+    def construct_matrix_dt(self, in_place=True, derivative=False, scale=1.0):
+        &#34;&#34;&#34;
+        Construct the coefficient matrix
+        i.e. matrix A in Ax = b
+
+        This extends the ConductionND method by including time-dependence
+        through a scale variable.
+        &#34;&#34;&#34;
+        ldiag = self._ldiag
+        mat = self.mat
+
+        if scale &gt; 0:
+            mat = super(DiffusionND, self).construct_matrix(in_place, derivative)
+            mat.scale(-scale)
+        else:
+            # preallocate identity matrix
+            diag = self.gvec.duplicate()
+            diag.set(1.0)
+            mat.assemblyBegin()
+            mat.setDiagonal(diag)
+            mat.assemblyEnd()
+            mat.scale(0.0)
+
+        diag = mat.getDiagonal()
+        diag += 1.0 # add self node
+
+        # overwrite Dirichlet BCs
+        self.dm.globalToLocal(diag, ldiag)
+        ldiag.array[self.dirichlet_mask] = 1.0
+        self.dm.localToGlobal(ldiag, diag)
+        mat.setDiagonal(diag)
+        return mat
+
+
+    def construct_rhs_dt(self, in_place=True, scale=1.0):
+        &#34;&#34;&#34;
+        Construct the right-hand-side vector
+        i.e. vector b in Ax = b
+
+        This extends the ConductionND method by including time-dependence
+        through a scale variable.
+        &#34;&#34;&#34;
+        if in_place:
+            rhs = self.rhs
+        else:
+            rhs = self.create_meshVariable(&#39;rhs&#39;)
+
+        if scale &gt; 0:
+            # vectorise stencil similar to matrix construction
+            n = self.n
+            cols = self.cols
+            index = self.index
+            vals = self.vals
+
+            temp  = self.temperature[:].reshape(n)
+            kappa = self.diffusivity[:].reshape(n)
+            k = np.pad(kappa, self.width, &#39;constant&#39;, constant_values=0)
+            T = np.pad(temp,  self.width, &#39;constant&#39;, constant_values=0)
+
+            for i in range(0, self.stencil_width):
+                obj = tuple(self.closure[i])
+
+                cols[i] = index[obj].ravel()
+
+                distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+                distance[distance==0] = 1e-12 # protect against dividing by zero
+                delta = scale/distance**2
+
+                vals[i] = delta*(0.5*(k[obj] + kappa)*(T[obj] - temp)).ravel()
+            
+            # zero off-grid coordinates
+            vals[cols &lt; 0] = 0.0
+            vals[-1] = 0.0 # centre point
+            vec = vals.sum(axis=0)
+
+            # add heat sources
+            vec += scale*self.heat_sources[:]
+        else:
+            vec = np.zeros(self.nn)
+
+        # add current temperature
+        vec += self.temperature[:]
+
+        # enforce BCs
+        for wall in self.bc:
+            val  = self.bc[wall][&#39;val&#39;]
+            flux = self.bc[wall][&#39;flux&#39;]
+            mask = self.bc[wall][&#39;mask&#39;]
+            if flux:
+                vec[mask] = val
+            else:
+                vec[mask] = val
+
+        rhs[:] = vec
+        return rhs
+
+
+    def timestep(self, steps=1, dt=None):
+        &#34;&#34;&#34;
+        Solve a timestep
+        &#34;&#34;&#34;
+        if type(dt) == type(None):
+            dt = self.calculate_dt()
+
+        theta = self.theta
+        Lscale = dt*theta
+        Rscale = dt*(1.0 - theta)
+
+        # construct a constant matrix
+        mat = self.construct_matrix_dt(scale=Lscale)
+
+        for step in range(steps):
+            rhs = self.construct_rhs_dt(scale=Rscale)
+            T = self.solve(mat, rhs)
+
+        return T</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="conduction.solver.conductionNd.ConductionND" href="conductionNd.html#conduction.solver.conductionNd.ConductionND">ConductionND</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="conduction.solver.diffusionNd.DiffusionND.calculate_dt"><code class="name flex">
+<span>def <span class="ident">calculate_dt</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate optimal timestep size</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_dt(self):
+    &#34;&#34;&#34;
+    Calculate optimal timestep size
+    &#34;&#34;&#34;
+    kappa = self.diffusivity
+    delta = self.delta
+    max_kappa = kappa._gdata.max()[1]
+    dt = np.sum(delta**2)/(4.0*max_kappa)
+    return dt</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.diffusionNd.DiffusionND.construct_matrix_dt"><code class="name flex">
+<span>def <span class="ident">construct_matrix_dt</span></span>(<span>self, in_place=True, derivative=False, scale=1.0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct the coefficient matrix
+i.e. matrix A in Ax = b</p>
+<p>This extends the ConductionND method by including time-dependence
+through a scale variable.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def construct_matrix_dt(self, in_place=True, derivative=False, scale=1.0):
+    &#34;&#34;&#34;
+    Construct the coefficient matrix
+    i.e. matrix A in Ax = b
+
+    This extends the ConductionND method by including time-dependence
+    through a scale variable.
+    &#34;&#34;&#34;
+    ldiag = self._ldiag
+    mat = self.mat
+
+    if scale &gt; 0:
+        mat = super(DiffusionND, self).construct_matrix(in_place, derivative)
+        mat.scale(-scale)
+    else:
+        # preallocate identity matrix
+        diag = self.gvec.duplicate()
+        diag.set(1.0)
+        mat.assemblyBegin()
+        mat.setDiagonal(diag)
+        mat.assemblyEnd()
+        mat.scale(0.0)
+
+    diag = mat.getDiagonal()
+    diag += 1.0 # add self node
+
+    # overwrite Dirichlet BCs
+    self.dm.globalToLocal(diag, ldiag)
+    ldiag.array[self.dirichlet_mask] = 1.0
+    self.dm.localToGlobal(ldiag, diag)
+    mat.setDiagonal(diag)
+    return mat</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.diffusionNd.DiffusionND.construct_rhs_dt"><code class="name flex">
+<span>def <span class="ident">construct_rhs_dt</span></span>(<span>self, in_place=True, scale=1.0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct the right-hand-side vector
+i.e. vector b in Ax = b</p>
+<p>This extends the ConductionND method by including time-dependence
+through a scale variable.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def construct_rhs_dt(self, in_place=True, scale=1.0):
+    &#34;&#34;&#34;
+    Construct the right-hand-side vector
+    i.e. vector b in Ax = b
+
+    This extends the ConductionND method by including time-dependence
+    through a scale variable.
+    &#34;&#34;&#34;
+    if in_place:
+        rhs = self.rhs
+    else:
+        rhs = self.create_meshVariable(&#39;rhs&#39;)
+
+    if scale &gt; 0:
+        # vectorise stencil similar to matrix construction
+        n = self.n
+        cols = self.cols
+        index = self.index
+        vals = self.vals
+
+        temp  = self.temperature[:].reshape(n)
+        kappa = self.diffusivity[:].reshape(n)
+        k = np.pad(kappa, self.width, &#39;constant&#39;, constant_values=0)
+        T = np.pad(temp,  self.width, &#39;constant&#39;, constant_values=0)
+
+        for i in range(0, self.stencil_width):
+            obj = tuple(self.closure[i])
+
+            cols[i] = index[obj].ravel()
+
+            distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+            distance[distance==0] = 1e-12 # protect against dividing by zero
+            delta = scale/distance**2
+
+            vals[i] = delta*(0.5*(k[obj] + kappa)*(T[obj] - temp)).ravel()
+        
+        # zero off-grid coordinates
+        vals[cols &lt; 0] = 0.0
+        vals[-1] = 0.0 # centre point
+        vec = vals.sum(axis=0)
+
+        # add heat sources
+        vec += scale*self.heat_sources[:]
+    else:
+        vec = np.zeros(self.nn)
+
+    # add current temperature
+    vec += self.temperature[:]
+
+    # enforce BCs
+    for wall in self.bc:
+        val  = self.bc[wall][&#39;val&#39;]
+        flux = self.bc[wall][&#39;flux&#39;]
+        mask = self.bc[wall][&#39;mask&#39;]
+        if flux:
+            vec[mask] = val
+        else:
+            vec[mask] = val
+
+    rhs[:] = vec
+    return rhs</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.diffusionNd.DiffusionND.timestep"><code class="name flex">
+<span>def <span class="ident">timestep</span></span>(<span>self, steps=1, dt=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Solve a timestep</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def timestep(self, steps=1, dt=None):
+    &#34;&#34;&#34;
+    Solve a timestep
+    &#34;&#34;&#34;
+    if type(dt) == type(None):
+        dt = self.calculate_dt()
+
+    theta = self.theta
+    Lscale = dt*theta
+    Rscale = dt*(1.0 - theta)
+
+    # construct a constant matrix
+    mat = self.construct_matrix_dt(scale=Lscale)
+
+    for step in range(steps):
+        rhs = self.construct_rhs_dt(scale=Rscale)
+        T = self.solve(mat, rhs)
+
+    return T</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="conduction.solver.conductionNd.ConductionND" href="conductionNd.html#conduction.solver.conductionNd.ConductionND">ConductionND</a></b></code>:
+<ul class="hlist">
+<li><code><a title="conduction.solver.conductionNd.ConductionND.boundary_condition" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.boundary_condition">boundary_condition</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.construct_matrix" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.construct_matrix">construct_matrix</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.construct_rhs" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.construct_rhs">construct_rhs</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.find_neighbours" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.find_neighbours">find_neighbours</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.gradient" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.gradient">gradient</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.heatflux" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.heatflux">heatflux</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.isosurface" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.isosurface">isosurface</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.refine" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.refine">refine</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.save_field_to_hdf5" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.save_field_to_hdf5">save_field_to_hdf5</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.save_mesh_to_hdf5" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.save_mesh_to_hdf5">save_mesh_to_hdf5</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.save_vector_to_hdf5" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.save_vector_to_hdf5">save_vector_to_hdf5</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.solve" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.solve">solve</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.sync" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.sync">sync</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.update_properties" href="conductionNd.html#conduction.solver.conductionNd.ConductionND.update_properties">update_properties</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="conduction.solver" href="index.html">conduction.solver</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="conduction.solver.diffusionNd.DiffusionND" href="#conduction.solver.diffusionNd.DiffusionND">DiffusionND</a></code></h4>
+<ul class="">
+<li><code><a title="conduction.solver.diffusionNd.DiffusionND.calculate_dt" href="#conduction.solver.diffusionNd.DiffusionND.calculate_dt">calculate_dt</a></code></li>
+<li><code><a title="conduction.solver.diffusionNd.DiffusionND.construct_matrix_dt" href="#conduction.solver.diffusionNd.DiffusionND.construct_matrix_dt">construct_matrix_dt</a></code></li>
+<li><code><a title="conduction.solver.diffusionNd.DiffusionND.construct_rhs_dt" href="#conduction.solver.diffusionNd.DiffusionND.construct_rhs_dt">construct_rhs_dt</a></code></li>
+<li><code><a title="conduction.solver.diffusionNd.DiffusionND.timestep" href="#conduction.solver.diffusionNd.DiffusionND.timestep">timestep</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

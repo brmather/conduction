@@ -1,0 +1,2366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>conduction.solver.conductionNd API documentation</title>
+<meta name="description" content="Copyright 2017 Ben Mather …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>conduction.solver.conductionNd</code></h1>
+</header>
+<section id="section-intro">
+<p>Copyright 2017 Ben Mather</p>
+<p>This file is part of Conduction <a href="https://git.dias.ie/itherc/conduction/">https://git.dias.ie/itherc/conduction/</a></p>
+<p>Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.</p>
+<p>Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the
+GNU Lesser General Public License for more details.</p>
+<p>You should have received a copy of the GNU Lesser General Public License
+along with Conduction.
+If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Copyright 2017 Ben Mather
+
+This file is part of Conduction &lt;https://git.dias.ie/itherc/conduction/&gt;
+
+Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.
+
+Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Conduction.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+&#34;&#34;&#34;
+
+try: range = xrange
+except: pass
+
+import numpy as np
+from petsc4py import PETSc
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+
+from ..tools import sum_duplicates
+from ..mesh import MeshVariable
+
+class ConductionND(object):
+    &#34;&#34;&#34;
+    Implicit N-dimensional solver for the steady-state heat equation
+    over a structured grid using PETSc data structures.
+
+    Parameters
+    ----------
+     minCoord : tuple, minimum Cartesian coordinates at edge of domain
+     maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+     res      : tuple, resolution in each dimension
+     kwargs   : dict, keyword arguments to pass to KSP method and preconditioner
+        see PETSc documentaion for KSPType and PCType options...
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html
+    &#34;&#34;&#34;
+    def __init__(self, minCoord, maxCoord, res, **kwargs):
+
+        dim = len(res)
+        extent = np.zeros(dim*2)
+
+        index = 0
+        for i in range(0, dim):
+            extent[index]   = minCoord[i]
+            extent[index+1] = maxCoord[i]
+            index += 2
+
+        width = kwargs.pop(&#39;stencil_width&#39;, 1)
+
+        dm = PETSc.DMDA().create(dim=dim, sizes=res, stencil_width=width, comm=comm)
+        dm.setUniformCoordinates(*extent)
+
+        self.dm = dm
+        self.lgmap = dm.getLGMap()
+        self.lvec = dm.createLocalVector()
+        self.gvec = dm.createGlobalVector()
+
+        # Setup matrix sizes
+        self.sizes = self.gvec.getSizes(), self.gvec.getSizes()
+        self.dim = dim
+        self.extent = extent
+
+
+        # include ghost nodes in local domain
+        # (minI, maxI), (minJ, maxJ), (minK, maxK) = dm.getGhostRanges()
+        ghost_ranges = dm.getGhostRanges()
+
+        n = np.zeros(dim, dtype=PETSc.IntType)
+        nn = 1
+        for i, (gs, ge) in enumerate(ghost_ranges):
+            n[i] = ge - gs
+            nn  *= n[i]
+
+        self.n = n[::-1]
+        self.nn = nn
+        self.npoints = nn
+
+        # stencil size
+        self.width = width
+        self.stencil_width = 2*dim*width + 1
+
+
+        # create closure array
+        closure = []
+        for w in range(width, 0, -1):
+            closure_array = self._get_closure_array(dim, w, width)
+            closure.extend(closure_array[:-1])
+        closure.append(closure_array[-1]) # centre node at last
+
+        # create closure object
+        self.closure = self._create_closure_object(closure, width)
+
+
+        # local numbering
+        self.nodes = np.arange(0, nn, dtype=PETSc.IntType)
+
+
+        # set matrix and vector types
+        self.MatType = kwargs.pop(&#39;MatType&#39;, &#39;aij&#39;) # cuda, seqaij, mpiaij, etc.
+        self.VecType = kwargs.pop(&#39;VecType&#39;, &#39;standard&#39;)
+
+        self._initialise_mesh_variables()
+        self._initialise_boundary_dictionary()
+        self.mat = self._initialise_matrix()
+        self._initialise_COO_vectors(width)
+        self.ksp = self._initialise_ksp(**kwargs)
+
+        # thermal properties
+        self.diffusivity  = MeshVariable(&#39;diffusivity&#39;, dm)
+        self.heat_sources = MeshVariable(&#39;heat_sources&#39;, dm)
+        self.temperature  = MeshVariable(&#39;temperature&#39;, dm)
+
+        # right hand side vector
+        self.rhs = MeshVariable(&#39;rhs&#39;, dm)
+
+
+    def __delete__(self):
+
+        del self.rhs, self.diffusivity, self.heat_sources, self.temperature
+        self.mat.destroy()
+        self.dm.destroy()
+        self.lvec.destroy()
+        self.gvec.destroy()
+        self.lgmap.destroy()
+
+
+    def _initialise_ksp(self, matrix=None, atol=1e-10, rtol=1e-50, **kwargs):
+        &#34;&#34;&#34;
+        Initialise linear solver object
+        &#34;&#34;&#34;
+        if matrix is None:
+            matrix = self.mat
+
+        solver = kwargs.pop(&#39;solver&#39;, &#39;gmres&#39;)
+        precon = kwargs.pop(&#39;pc&#39;, None)
+
+        ksp = PETSc.KSP().create(comm)
+        ksp.setType(solver)
+        ksp.setOperators(matrix)
+        ksp.setTolerances(atol, rtol)
+        if precon is not None:
+            pc = ksp.getPC()
+            pc.setType(precon)
+        ksp.setFromOptions()
+        return ksp
+
+
+    def _initialise_COO_vectors(self, pad=1):
+
+        nn = self.nn
+        n = self.n
+
+        self.index = np.pad(self.nodes.reshape(n), pad, &#39;constant&#39;, constant_values=-1)
+
+        self.rows = np.empty((self.stencil_width, nn), dtype=PETSc.IntType)
+        self.cols = np.empty((self.stencil_width, nn), dtype=PETSc.IntType)
+        self.vals = np.empty((self.stencil_width, nn))
+
+
+
+    def _initialise_mesh_variables(self):
+
+        dim = self.dim
+        bbox = self.dm.getBoundingBox()
+
+        extent = np.zeros(dim*2)
+
+        index = 0
+        for bs, be in bbox:
+            extent[index]   = bs
+            extent[index+1] = be
+            index += 2
+
+        self.extent = extent
+
+        # local coordinates
+        self.coords = self.dm.getCoordinatesLocal().array.reshape(-1, dim)
+
+        grid_coords = [None]*dim
+        for i in range(0, dim):
+            grid_coords[i] = np.unique(self.coords[:,i])
+
+        self.grid_coords = grid_coords
+
+
+    def _initialise_boundary_dictionary(self):
+
+        coords = self.coords
+        grid_coords = self.grid_coords
+        dim = self.dim
+
+        minCoords = coords.min(axis=0)
+        maxCoords = coords.max(axis=0)
+
+        bbox = self.dm.getBoundingBox()
+        sizes = self.dm.getSizes()
+
+        # Setup boundary dictionary
+        bc = dict()
+
+        wall = [(&#34;minX&#34;, &#34;maxX&#34;), (&#34;minY&#34;, &#34;maxY&#34;), (&#34;minZ&#34;, &#34;maxZ&#34;)]
+
+        for i in range(0, dim):
+            w0, w1 = wall[i]
+            c0, c1 = bbox[i]
+            m0, m1 = self.coords[:,i] == c0, self.coords[:,i] == c1
+            d0 = d1 = (c1 - c0)/(sizes[i] - 1)
+
+            bc[w0] = {&#34;val&#34;: 0.0, &#34;delta&#34;: d0, &#34;flux&#34;: True, &#34;mask&#34;: m0}
+            bc[w1] = {&#34;val&#34;: 0.0, &#34;delta&#34;: d1, &#34;flux&#34;: True, &#34;mask&#34;: m1}
+
+        self.bc = bc
+        self.dirichlet_mask = np.zeros(self.nn, dtype=bool)
+
+
+    def _initialise_matrix(self, nnz=None):
+        &#34;&#34;&#34;
+        There should be no mallocs but we turn off the error just to be sure.
+        If there is it will be from users adjusting the BCs.
+
+        Could push zeros into the matrix to allocate all potential entries
+        but that would lengthen the build stage.
+        &#34;&#34;&#34;
+        if nnz is None:
+            nnz = (self.stencil_width, self.dim*2)
+
+        mat = PETSc.Mat().create(comm=comm)
+        mat.setType(self.MatType)
+        mat.setSizes(self.sizes)
+        mat.setLGMap(self.lgmap)
+        mat.setPreallocationNNZ(nnz)
+        mat.setOption(PETSc.Mat.Option.NEW_NONZERO_ALLOCATION_ERR, 0)
+        mat.setFromOptions()
+        
+        return mat
+
+    def _initialise_vector(self, sizes):
+
+        vec = PETSc.Vec().create(comm=comm)
+        vec.setType(self.VecType)
+        vec.setSizes(self.sizes[0])
+        vec.setLGMap(self.lgmap)
+        vec.setFromOptions()
+
+        return vec
+
+
+    def _create_closure_object(self, closure, pad=1):
+
+        nc = len(closure)
+        n = self.n
+        p2 = 2*pad
+        obj = [[0] * self.dim for i in range(nc)]
+
+        for i in range(0, nc):
+            # construct slicing object
+            for j in range(0, self.dim):
+                start, end = closure[i-j]
+                obj[i][j] = slice(start, n[j]+end+p2)
+
+        return obj
+
+    def _get_closure_array(self, dim, width=1, pad=1):
+        w, p = width, pad
+        if w &gt; p:
+            raise ValueError(&#39;width exceeds padding&#39;)
+
+        if dim == 1:
+            closure = [(p-w,-p-w), (p+w,-(p-w)), (p,-p)]
+        elif dim == 2:
+            closure = [(p-w,-p-w), (p,-p), (p+w,-(p-w)), (p,-p), (p,-p)]
+        elif dim == 3:
+            closure = [(p-w,-p-w), (p,-p), (p,-p), (p+w,-(p-w)), (p,-p), (p,-p), (p,-p)]
+        else:
+            raise ValueError(&#39;{} is an invalid number of dimensions&#39;.format(dim))
+        return closure
+
+
+    def refine(self, fn, axis):
+        &#34;&#34;&#34;
+        Pass a function to apply to the x,y,z coordinates on the mesh.
+        The domain will be redefined accordingly.
+
+        Notes
+        -----
+         We do it this way to make sure the domain is balanced across
+         processors. Adding new nodes would imbalance the matrix.
+        &#34;&#34;&#34;
+        v = self.dm.getCoordinatesLocal()
+        coords = v.array.reshape(-1, self.dim)
+
+        coords[:,axis] = fn(coords[:,axis])
+
+        if not np.isfinite(coords).all():
+            raise ValueError(&#39;This function has created NaNs or Inf numbers&#39;)
+
+        v.setArray(coords.ravel())
+
+        self.dm.setCoordinatesLocal(v)
+
+        self._initialise_mesh_variables()
+        self._initialise_boundary_dictionary()
+        self.mat = self._initialise_matrix()
+
+
+    def create_meshVariable(self, name):
+        return MeshVariable(name, self.dm)
+
+
+    def update_properties(self, diffusivity, heat_sources):
+        &#34;&#34;&#34;
+        Update diffusivity and heat sources
+        &#34;&#34;&#34;
+
+
+        self.diffusivity[:] = diffusivity
+        self.heat_sources[:] = heat_sources
+
+
+    def boundary_condition(self, wall, val, flux=True):
+        &#34;&#34;&#34;
+        Set the boundary conditions on each wall of the domain.
+        By default each wall is a Neumann (flux) condition.
+        If flux=True, positive val indicates a flux vector towards the centre
+        of the domain.
+
+        val can be a vector with the same number of elements as the wall
+        &#34;&#34;&#34;
+        wall = str(wall)
+
+        if wall in self.bc:
+            self.bc[wall][&#34;val&#34;]  = np.array(val, copy=True)
+            self.bc[wall][&#34;flux&#34;] = bool(flux)
+            d = self.bc[wall]
+
+            mask = d[&#39;mask&#39;]
+
+            if flux:
+                self.dirichlet_mask[mask] = False
+                self.bc[wall][&#34;val&#34;] /= -d[&#39;delta&#39;]
+            else:
+                self.dirichlet_mask[mask] = True
+
+        else:
+            raise ValueError(&#34;Wall should be one of {}&#34;.format(self.bc.keys()))
+
+
+    def find_neighbours(self, width=1):
+        &#34;&#34;&#34;
+        Find node neighbours for each point in the domain
+
+        Returns a point cloud of neighbours shape(n,nneighbours)
+        -1 indicates a null value
+        &#34;&#34;&#34;
+
+        nodes = self.nodes
+        dim = self.dim
+        n = self.n
+
+        # setup new stencil
+        stencil_width = 2*self.dim*width + 1
+        neighbours = np.empty((stencil_width, self.nn), dtype=PETSc.IntType)
+        index = np.pad(nodes.reshape(n), width, &#39;constant&#39;, constant_values=-1)
+
+        closure = []
+        for w in range(width, 0, -1):
+            closure_array = self._get_closure_array(dim, w, width)
+            closure.extend(closure_array[:-1])
+        closure.append(closure_array[-1]) # centre node at last
+
+        # create closure object
+        closure = self._create_closure_object(closure, width)
+
+        for i in range(0, stencil_width):
+            obj = closure[i]
+            neighbours[i] = index[obj].ravel()
+
+        return neighbours.T
+
+
+
+    def construct_matrix(self, in_place=True, derivative=False):
+        &#34;&#34;&#34;
+        Construct the coefficient matrix
+        i.e. matrix A in Ax = b
+
+        We vectorise the 7-point stencil for fast matrix insertion.
+        An extra border of dummy values around the domain allows for automatic
+        Neumann (flux) boundary creation.
+        These are stomped on if there are any Dirichlet conditions.
+
+        &#34;&#34;&#34;
+
+        if in_place:
+            mat = self.mat
+        else:
+            mat = self._initialise_matrix()
+
+        nodes = self.nodes
+        nn = self.nn
+        n = self.n
+        dim = self.dim
+
+        index = self.index
+
+        rows = self.rows
+        cols = self.cols
+        vals = self.vals
+
+        dirichlet_mask = self.dirichlet_mask
+
+        u = self.diffusivity[:].reshape(n)
+        k = np.pad(u, self.width, &#39;constant&#39;, constant_values=0)
+
+        for i in range(0, self.stencil_width):
+            obj = tuple(self.closure[i])
+
+            rows[i] = nodes
+            cols[i] = index[obj].ravel()
+
+            distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+            distance[distance==0] = 1e-12 # protect against dividing by zero
+            delta = 1.0/(2.0*distance**2)
+
+            vals[i] = delta*(k[obj] + u).ravel()
+
+
+        # Dirichlet boundary conditions (duplicates are summed)
+        cols[:,dirichlet_mask] = nodes[dirichlet_mask]
+        vals[:,dirichlet_mask] = 0.0
+
+        # zero off-grid coordinates
+        vals[cols &lt; 0] = 0.0
+
+        # centre point
+        vals[-1] = 0.0
+        if derivative:
+            vals[-1][dirichlet_mask] = 0.
+        else:
+            vals[-1][dirichlet_mask] = -1.0
+
+
+        row = rows.ravel()
+        col = cols.ravel()
+        val = vals.ravel()
+
+
+        # mask off-grid entries and sum duplicates
+        mask = col &gt;= 0
+        row, col, val = sum_duplicates(row[mask], col[mask], val[mask])
+
+
+        # indptr, col, val = coo_tocsr(row, col, val)
+        nnz = np.bincount(row)
+        indptr = np.insert(np.cumsum(nnz),0,0)
+
+
+        mat.assemblyBegin()
+        mat.setValuesLocalCSR(indptr.astype(PETSc.IntType), col, val)
+        mat.assemblyEnd()
+
+        # set diagonal vector
+        diag = mat.getRowSum()
+        diag.scale(-1.0)
+        mat.setDiagonal(diag)
+
+        return mat
+
+
+    def construct_rhs(self, in_place=True):
+        &#34;&#34;&#34;
+        Construct the right-hand-side vector
+        i.e. vector b in Ax = b
+
+        Boundary conditions are grabbed from the dictionary and
+        summed to the rhs.
+        Be careful of duplicate entries on the corners!!
+        &#34;&#34;&#34;
+        if in_place:
+            rhs = self.rhs
+        else:
+            rhs = MeshVariable(&#39;rhs&#39;, self.dm)
+        
+        vec = -1.0*self.heat_sources[:]
+
+        for wall in self.bc:
+            val  = self.bc[wall][&#39;val&#39;]
+            flux = self.bc[wall][&#39;flux&#39;]
+            mask = self.bc[wall][&#39;mask&#39;]
+            if flux:
+                vec[mask] += val
+            else:
+                vec[mask] = val
+
+        rhs[:] = vec
+        return rhs
+
+
+    def solve(self, matrix=None, rhs=None):
+        &#34;&#34;&#34;
+        Construct the matrix A and vector b in Ax = b
+        and solve for x
+
+        GMRES method is default
+        &#34;&#34;&#34;
+        if matrix is None:
+            matrix = self.construct_matrix()
+        if rhs is None:
+            rhs = self.construct_rhs()
+        res = self.temperature
+
+        ksp = self.ksp
+        ksp.setOperators(matrix)
+        ksp.solve(rhs._gdata, res._gdata)
+        # We should hand this back to local vectors
+        return res[:]
+
+
+    def sync(self, vector):
+        &#34;&#34;&#34;
+        Synchronise a vector field across all processors
+        &#34;&#34;&#34;
+        self.lvec.setArray(vector)
+        self.dm.localToGlobal(self.lvec, self.gvec)
+        self.dm.globalToLocal(self.gvec, self.lvec)
+        return self.lvec.array.copy()
+
+
+    def gradient(self, vector, **kwargs):
+        &#34;&#34;&#34;
+        Computes the gradient of a vector field
+
+        Parameters
+        ----------
+         vector : array shape(n,) size of the mesh
+
+        Returns
+        -------
+         grad   : array shape(dim,n) gradient in each direction
+        &#34;&#34;&#34;
+        return np.gradient(vector.reshape(self.n), *self.grid_coords[::-1], **kwargs)
+
+
+    def heatflux(self):
+        &#34;&#34;&#34;
+        Compute the heat flux based on stored vector fields
+        - temperature
+        - diffusivity
+
+        Returns
+        -------
+         Q : array shape(dim,n) heat flux in each direction
+        &#34;&#34;&#34;
+        T = self.temperature[:]
+        k = self.diffusivity[:] * -1
+        divT = np.array(self.gradient(T))
+        q = []
+        for i in range(0, self.dim):
+            div = k*divT[i].ravel()
+            q.append(div)
+
+        return np.array(q)
+
+
+    def isosurface(self, vector, isoval, axis=0, interp=&#39;nearest&#39;, return_indices=False):
+        &#34;&#34;&#34;
+        Calculate an isosurface along a given axis
+        (So far this is only working for axis=0 and in serial)
+
+        Parameters
+        ----------
+         vector : array, the same size as the mesh (n,)
+         isoval : float, isosurface value
+         axis   : int, axis to generate the isosurface
+         interp : str, method can be either
+            &#39;nearest&#39; - nearest neighbour interpolation
+            &#39;linear&#39;  - linear interpolation
+         return_indices : bool (default=False)
+            return the coordinate index
+
+        Returns
+        -------
+         z_interp : isosurface the same size as the specified axis
+         indices  : int, same size as axis (if return_indices is True)
+        &#34;&#34;&#34;
+        Vcube = vector.reshape(self.n)
+        Zcube = self.coords[:,::-1][:,axis].reshape(self.n)
+        sort_idx = ((Vcube - isoval)**2).argsort(axis=axis)    
+        i0 = sort_idx[0]
+        # z0 = Zcube.take(i0)
+        
+        obj = []
+        for d in range(0, self.dim):
+            obj.append( slice(0, self.n[d]) )
+        obj.pop(axis)
+        
+        idx = list(np.mgrid[obj])
+        idx.insert(axis, i0)
+        z0 = Zcube[idx]
+
+        z_interp = z0
+        if interp == &#39;linear&#39;:
+            v0 = Vcube[idx]
+            
+            # identify next nearest node
+            i1 = sort_idx[1]
+            idx[axis] = i1
+            z1 = Zcube[idx]
+            v1 = Vcube[idx]
+
+            vmin = np.minimum(v0, v1)
+            vmax = np.maximum(v0, v1)
+            ratio = np.vstack([np.ones_like(vmax)*isoval, vmin, vmax])
+            ratio -= ratio.min(axis=0)
+            ratio /= ratio.max(axis=0)
+            z_interp = ratio[0]*z1 + (1.0 - ratio[0])*z0
+
+        if return_indices:
+            Bcube = np.zeros_like(Vcube, dtype=bool)
+            idx[axis] = i0
+            Bcube[idx] = True
+            indices = np.where(Bcube.ravel())[0]
+            return z_interp, indices
+        else:
+            return z_interp
+
+
+    def save_mesh_to_hdf5(self, filename):
+        &#34;&#34;&#34;
+        Save important mesh information to an HDF5 file
+        including bounding box and resolution.
+
+        These are saved under the topology group
+
+        Parameters
+        ----------
+         filename : file to put .h5 file
+        &#34;&#34;&#34;
+
+        import h5py
+
+        filename = str(filename)
+        if not filename.endswith(&#39;.h5&#39;):
+            filename += &#39;.h5&#39;
+
+        ViewHDF5 = PETSc.Viewer()
+        ViewHDF5.createHDF5(filename, mode=&#39;w&#39;)
+        ViewHDF5.view(obj=self.dm)
+        ViewHDF5.destroy()
+
+        if comm.rank == 0:
+            # Every processor is writing the same thing
+            f = h5py.File(filename, &#39;r+&#39;)
+            f.create_group(&#39;topology&#39;)
+            topo = f[&#39;topology&#39;]
+
+            # create attributes
+            extent = self.extent.reshape(self.dim,-1)
+            minCoord = extent[:,0]
+            maxCoord = extent[:,1]
+            shape = self.dm.getSizes()
+
+            topo.attrs.create(&#39;minCoord&#39;, minCoord[::-1])
+            topo.attrs.create(&#39;maxCoord&#39;, maxCoord[::-1])
+            topo.attrs.create(&#39;shape&#39;, np.array(shape)[::-1])
+
+            f.close()
+
+
+    def save_field_to_hdf5(self, filename, *args, **kwargs):
+        &#34;&#34;&#34;
+        Saves data on the mesh to an HDF5 file
+         e.g. height, rainfall, sea level, etc.
+
+        Pass these as arguments or keyword arguments for
+        their names to be saved to the hdf5 file
+        &#34;&#34;&#34;
+        import os.path
+
+        filename = str(filename)
+        if not filename.endswith(&#39;.h5&#39;):
+            filename += &#39;.h5&#39;
+
+        # write mesh if it doesn&#39;t exist
+        # if not os.path.isfile(file):
+        #     self.save_mesh_to_hdf5(file)
+
+        kwdict = kwargs
+        for i, arg in enumerate(args):
+            key = &#34;arr_{}&#34;.format(i)
+            if key in kwdict.keys():
+                raise ValueError(&#34;Cannot use un-named variables\
+                                  and keyword: {}&#34;.format(key))
+            kwdict[key] = arg
+
+        vec = self.gvec.duplicate()
+
+        # change mode to append if file already exists
+        # set mode to &#34;a&#34; after first write
+        if os.path.isfile(filename):
+            mode = &#39;a&#39;
+        else:
+            mode = &#39;w&#39;
+
+
+        for key in kwdict:
+            val = kwdict[key]
+            try:
+                vec.setArray(val)
+            except:
+                self.lvec.setArray(val)
+                self.dm.localToGlobal(self.lvec, vec)
+
+            vec.setName(key)
+
+            ViewHDF5 = PETSc.Viewer()
+            ViewHDF5.createHDF5(filename, mode=mode)
+            ViewHDF5.view(obj=vec)
+            ViewHDF5.destroy()
+            mode = &#34;a&#34;
+
+        vec.destroy()
+
+
+    def save_vector_to_hdf5(self, filename, *args, **kwargs):
+        &#34;&#34;&#34;
+        Saves vector on the mesh to an HDF5 file
+         e.g. heat flux field.
+
+        Pass these as arguments or keyword arguments for
+        their names to be saved to the hdf5 file
+
+        Each argument with x,y,z direction tuple
+         e.g. Q=(Qx, Qy, Qz)
+        &#34;&#34;&#34;
+        import os.path
+
+        filename = str(filename)
+        if not filename.endswith(&#39;.h5&#39;):
+            filename += &#39;.h5&#39;
+
+        kwdict = kwargs
+        for i, arg in enumerate(args):
+            key = &#34;arr_{}&#34;.format(i)
+            if key in kwdict.keys():
+                raise ValueError(&#34;Cannot use un-named variables\
+                                  and keyword: {}&#34;.format(key))
+            kwdict[key] = arg
+
+        # change mode to append if file already exists
+        # set mode to &#34;a&#34; after first write
+        if os.path.isfile(filename):
+            mode = &#39;a&#39;
+        else:
+            mode = &#39;w&#39;
+
+
+        # This is a flattened dim x n global vector
+        gvec = self.dm.getCoordinates().duplicate()
+
+        for key in kwdict:
+            val = np.array(kwdict[key]).T.ravel()
+
+            # vx, vy, vz = kwdict[key]
+            # val = np.column_stack([vx, vy, vz]).ravel()
+
+            gvec.assemblyBegin()
+            gvec.setValuesLocal(np.arange(val.size, dtype=PETSc.IntType), val)
+            gvec.assemblyEnd()
+            gvec.setName(key)
+
+            ViewHDF5 = PETSc.Viewer()
+            ViewHDF5.createHDF5(filename, mode=mode)
+            ViewHDF5.view(obj=gvec)
+            ViewHDF5.destroy()
+            mode = &#34;a&#34;
+
+        gvec.destroy()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="conduction.solver.conductionNd.ConductionND"><code class="flex name class">
+<span>class <span class="ident">ConductionND</span></span>
+<span>(</span><span>minCoord, maxCoord, res, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implicit N-dimensional solver for the steady-state heat equation
+over a structured grid using PETSc data structures.</p>
+<h2 id="parameters">Parameters</h2>
+<p>minCoord : tuple, minimum Cartesian coordinates at edge of domain
+maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+res
+: tuple, resolution in each dimension
+kwargs
+: dict, keyword arguments to pass to KSP method and preconditioner
+see PETSc documentaion for KSPType and PCType options&hellip;
+<a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html">http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html</a>
+<a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html">http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ConductionND(object):
+    &#34;&#34;&#34;
+    Implicit N-dimensional solver for the steady-state heat equation
+    over a structured grid using PETSc data structures.
+
+    Parameters
+    ----------
+     minCoord : tuple, minimum Cartesian coordinates at edge of domain
+     maxCoord : tuple, maximum Cartesian coordinates at edge of domain
+     res      : tuple, resolution in each dimension
+     kwargs   : dict, keyword arguments to pass to KSP method and preconditioner
+        see PETSc documentaion for KSPType and PCType options...
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/KSPType.html
+        http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCType.html
+    &#34;&#34;&#34;
+    def __init__(self, minCoord, maxCoord, res, **kwargs):
+
+        dim = len(res)
+        extent = np.zeros(dim*2)
+
+        index = 0
+        for i in range(0, dim):
+            extent[index]   = minCoord[i]
+            extent[index+1] = maxCoord[i]
+            index += 2
+
+        width = kwargs.pop(&#39;stencil_width&#39;, 1)
+
+        dm = PETSc.DMDA().create(dim=dim, sizes=res, stencil_width=width, comm=comm)
+        dm.setUniformCoordinates(*extent)
+
+        self.dm = dm
+        self.lgmap = dm.getLGMap()
+        self.lvec = dm.createLocalVector()
+        self.gvec = dm.createGlobalVector()
+
+        # Setup matrix sizes
+        self.sizes = self.gvec.getSizes(), self.gvec.getSizes()
+        self.dim = dim
+        self.extent = extent
+
+
+        # include ghost nodes in local domain
+        # (minI, maxI), (minJ, maxJ), (minK, maxK) = dm.getGhostRanges()
+        ghost_ranges = dm.getGhostRanges()
+
+        n = np.zeros(dim, dtype=PETSc.IntType)
+        nn = 1
+        for i, (gs, ge) in enumerate(ghost_ranges):
+            n[i] = ge - gs
+            nn  *= n[i]
+
+        self.n = n[::-1]
+        self.nn = nn
+        self.npoints = nn
+
+        # stencil size
+        self.width = width
+        self.stencil_width = 2*dim*width + 1
+
+
+        # create closure array
+        closure = []
+        for w in range(width, 0, -1):
+            closure_array = self._get_closure_array(dim, w, width)
+            closure.extend(closure_array[:-1])
+        closure.append(closure_array[-1]) # centre node at last
+
+        # create closure object
+        self.closure = self._create_closure_object(closure, width)
+
+
+        # local numbering
+        self.nodes = np.arange(0, nn, dtype=PETSc.IntType)
+
+
+        # set matrix and vector types
+        self.MatType = kwargs.pop(&#39;MatType&#39;, &#39;aij&#39;) # cuda, seqaij, mpiaij, etc.
+        self.VecType = kwargs.pop(&#39;VecType&#39;, &#39;standard&#39;)
+
+        self._initialise_mesh_variables()
+        self._initialise_boundary_dictionary()
+        self.mat = self._initialise_matrix()
+        self._initialise_COO_vectors(width)
+        self.ksp = self._initialise_ksp(**kwargs)
+
+        # thermal properties
+        self.diffusivity  = MeshVariable(&#39;diffusivity&#39;, dm)
+        self.heat_sources = MeshVariable(&#39;heat_sources&#39;, dm)
+        self.temperature  = MeshVariable(&#39;temperature&#39;, dm)
+
+        # right hand side vector
+        self.rhs = MeshVariable(&#39;rhs&#39;, dm)
+
+
+    def __delete__(self):
+
+        del self.rhs, self.diffusivity, self.heat_sources, self.temperature
+        self.mat.destroy()
+        self.dm.destroy()
+        self.lvec.destroy()
+        self.gvec.destroy()
+        self.lgmap.destroy()
+
+
+    def _initialise_ksp(self, matrix=None, atol=1e-10, rtol=1e-50, **kwargs):
+        &#34;&#34;&#34;
+        Initialise linear solver object
+        &#34;&#34;&#34;
+        if matrix is None:
+            matrix = self.mat
+
+        solver = kwargs.pop(&#39;solver&#39;, &#39;gmres&#39;)
+        precon = kwargs.pop(&#39;pc&#39;, None)
+
+        ksp = PETSc.KSP().create(comm)
+        ksp.setType(solver)
+        ksp.setOperators(matrix)
+        ksp.setTolerances(atol, rtol)
+        if precon is not None:
+            pc = ksp.getPC()
+            pc.setType(precon)
+        ksp.setFromOptions()
+        return ksp
+
+
+    def _initialise_COO_vectors(self, pad=1):
+
+        nn = self.nn
+        n = self.n
+
+        self.index = np.pad(self.nodes.reshape(n), pad, &#39;constant&#39;, constant_values=-1)
+
+        self.rows = np.empty((self.stencil_width, nn), dtype=PETSc.IntType)
+        self.cols = np.empty((self.stencil_width, nn), dtype=PETSc.IntType)
+        self.vals = np.empty((self.stencil_width, nn))
+
+
+
+    def _initialise_mesh_variables(self):
+
+        dim = self.dim
+        bbox = self.dm.getBoundingBox()
+
+        extent = np.zeros(dim*2)
+
+        index = 0
+        for bs, be in bbox:
+            extent[index]   = bs
+            extent[index+1] = be
+            index += 2
+
+        self.extent = extent
+
+        # local coordinates
+        self.coords = self.dm.getCoordinatesLocal().array.reshape(-1, dim)
+
+        grid_coords = [None]*dim
+        for i in range(0, dim):
+            grid_coords[i] = np.unique(self.coords[:,i])
+
+        self.grid_coords = grid_coords
+
+
+    def _initialise_boundary_dictionary(self):
+
+        coords = self.coords
+        grid_coords = self.grid_coords
+        dim = self.dim
+
+        minCoords = coords.min(axis=0)
+        maxCoords = coords.max(axis=0)
+
+        bbox = self.dm.getBoundingBox()
+        sizes = self.dm.getSizes()
+
+        # Setup boundary dictionary
+        bc = dict()
+
+        wall = [(&#34;minX&#34;, &#34;maxX&#34;), (&#34;minY&#34;, &#34;maxY&#34;), (&#34;minZ&#34;, &#34;maxZ&#34;)]
+
+        for i in range(0, dim):
+            w0, w1 = wall[i]
+            c0, c1 = bbox[i]
+            m0, m1 = self.coords[:,i] == c0, self.coords[:,i] == c1
+            d0 = d1 = (c1 - c0)/(sizes[i] - 1)
+
+            bc[w0] = {&#34;val&#34;: 0.0, &#34;delta&#34;: d0, &#34;flux&#34;: True, &#34;mask&#34;: m0}
+            bc[w1] = {&#34;val&#34;: 0.0, &#34;delta&#34;: d1, &#34;flux&#34;: True, &#34;mask&#34;: m1}
+
+        self.bc = bc
+        self.dirichlet_mask = np.zeros(self.nn, dtype=bool)
+
+
+    def _initialise_matrix(self, nnz=None):
+        &#34;&#34;&#34;
+        There should be no mallocs but we turn off the error just to be sure.
+        If there is it will be from users adjusting the BCs.
+
+        Could push zeros into the matrix to allocate all potential entries
+        but that would lengthen the build stage.
+        &#34;&#34;&#34;
+        if nnz is None:
+            nnz = (self.stencil_width, self.dim*2)
+
+        mat = PETSc.Mat().create(comm=comm)
+        mat.setType(self.MatType)
+        mat.setSizes(self.sizes)
+        mat.setLGMap(self.lgmap)
+        mat.setPreallocationNNZ(nnz)
+        mat.setOption(PETSc.Mat.Option.NEW_NONZERO_ALLOCATION_ERR, 0)
+        mat.setFromOptions()
+        
+        return mat
+
+    def _initialise_vector(self, sizes):
+
+        vec = PETSc.Vec().create(comm=comm)
+        vec.setType(self.VecType)
+        vec.setSizes(self.sizes[0])
+        vec.setLGMap(self.lgmap)
+        vec.setFromOptions()
+
+        return vec
+
+
+    def _create_closure_object(self, closure, pad=1):
+
+        nc = len(closure)
+        n = self.n
+        p2 = 2*pad
+        obj = [[0] * self.dim for i in range(nc)]
+
+        for i in range(0, nc):
+            # construct slicing object
+            for j in range(0, self.dim):
+                start, end = closure[i-j]
+                obj[i][j] = slice(start, n[j]+end+p2)
+
+        return obj
+
+    def _get_closure_array(self, dim, width=1, pad=1):
+        w, p = width, pad
+        if w &gt; p:
+            raise ValueError(&#39;width exceeds padding&#39;)
+
+        if dim == 1:
+            closure = [(p-w,-p-w), (p+w,-(p-w)), (p,-p)]
+        elif dim == 2:
+            closure = [(p-w,-p-w), (p,-p), (p+w,-(p-w)), (p,-p), (p,-p)]
+        elif dim == 3:
+            closure = [(p-w,-p-w), (p,-p), (p,-p), (p+w,-(p-w)), (p,-p), (p,-p), (p,-p)]
+        else:
+            raise ValueError(&#39;{} is an invalid number of dimensions&#39;.format(dim))
+        return closure
+
+
+    def refine(self, fn, axis):
+        &#34;&#34;&#34;
+        Pass a function to apply to the x,y,z coordinates on the mesh.
+        The domain will be redefined accordingly.
+
+        Notes
+        -----
+         We do it this way to make sure the domain is balanced across
+         processors. Adding new nodes would imbalance the matrix.
+        &#34;&#34;&#34;
+        v = self.dm.getCoordinatesLocal()
+        coords = v.array.reshape(-1, self.dim)
+
+        coords[:,axis] = fn(coords[:,axis])
+
+        if not np.isfinite(coords).all():
+            raise ValueError(&#39;This function has created NaNs or Inf numbers&#39;)
+
+        v.setArray(coords.ravel())
+
+        self.dm.setCoordinatesLocal(v)
+
+        self._initialise_mesh_variables()
+        self._initialise_boundary_dictionary()
+        self.mat = self._initialise_matrix()
+
+
+    def create_meshVariable(self, name):
+        return MeshVariable(name, self.dm)
+
+
+    def update_properties(self, diffusivity, heat_sources):
+        &#34;&#34;&#34;
+        Update diffusivity and heat sources
+        &#34;&#34;&#34;
+
+
+        self.diffusivity[:] = diffusivity
+        self.heat_sources[:] = heat_sources
+
+
+    def boundary_condition(self, wall, val, flux=True):
+        &#34;&#34;&#34;
+        Set the boundary conditions on each wall of the domain.
+        By default each wall is a Neumann (flux) condition.
+        If flux=True, positive val indicates a flux vector towards the centre
+        of the domain.
+
+        val can be a vector with the same number of elements as the wall
+        &#34;&#34;&#34;
+        wall = str(wall)
+
+        if wall in self.bc:
+            self.bc[wall][&#34;val&#34;]  = np.array(val, copy=True)
+            self.bc[wall][&#34;flux&#34;] = bool(flux)
+            d = self.bc[wall]
+
+            mask = d[&#39;mask&#39;]
+
+            if flux:
+                self.dirichlet_mask[mask] = False
+                self.bc[wall][&#34;val&#34;] /= -d[&#39;delta&#39;]
+            else:
+                self.dirichlet_mask[mask] = True
+
+        else:
+            raise ValueError(&#34;Wall should be one of {}&#34;.format(self.bc.keys()))
+
+
+    def find_neighbours(self, width=1):
+        &#34;&#34;&#34;
+        Find node neighbours for each point in the domain
+
+        Returns a point cloud of neighbours shape(n,nneighbours)
+        -1 indicates a null value
+        &#34;&#34;&#34;
+
+        nodes = self.nodes
+        dim = self.dim
+        n = self.n
+
+        # setup new stencil
+        stencil_width = 2*self.dim*width + 1
+        neighbours = np.empty((stencil_width, self.nn), dtype=PETSc.IntType)
+        index = np.pad(nodes.reshape(n), width, &#39;constant&#39;, constant_values=-1)
+
+        closure = []
+        for w in range(width, 0, -1):
+            closure_array = self._get_closure_array(dim, w, width)
+            closure.extend(closure_array[:-1])
+        closure.append(closure_array[-1]) # centre node at last
+
+        # create closure object
+        closure = self._create_closure_object(closure, width)
+
+        for i in range(0, stencil_width):
+            obj = closure[i]
+            neighbours[i] = index[obj].ravel()
+
+        return neighbours.T
+
+
+
+    def construct_matrix(self, in_place=True, derivative=False):
+        &#34;&#34;&#34;
+        Construct the coefficient matrix
+        i.e. matrix A in Ax = b
+
+        We vectorise the 7-point stencil for fast matrix insertion.
+        An extra border of dummy values around the domain allows for automatic
+        Neumann (flux) boundary creation.
+        These are stomped on if there are any Dirichlet conditions.
+
+        &#34;&#34;&#34;
+
+        if in_place:
+            mat = self.mat
+        else:
+            mat = self._initialise_matrix()
+
+        nodes = self.nodes
+        nn = self.nn
+        n = self.n
+        dim = self.dim
+
+        index = self.index
+
+        rows = self.rows
+        cols = self.cols
+        vals = self.vals
+
+        dirichlet_mask = self.dirichlet_mask
+
+        u = self.diffusivity[:].reshape(n)
+        k = np.pad(u, self.width, &#39;constant&#39;, constant_values=0)
+
+        for i in range(0, self.stencil_width):
+            obj = tuple(self.closure[i])
+
+            rows[i] = nodes
+            cols[i] = index[obj].ravel()
+
+            distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+            distance[distance==0] = 1e-12 # protect against dividing by zero
+            delta = 1.0/(2.0*distance**2)
+
+            vals[i] = delta*(k[obj] + u).ravel()
+
+
+        # Dirichlet boundary conditions (duplicates are summed)
+        cols[:,dirichlet_mask] = nodes[dirichlet_mask]
+        vals[:,dirichlet_mask] = 0.0
+
+        # zero off-grid coordinates
+        vals[cols &lt; 0] = 0.0
+
+        # centre point
+        vals[-1] = 0.0
+        if derivative:
+            vals[-1][dirichlet_mask] = 0.
+        else:
+            vals[-1][dirichlet_mask] = -1.0
+
+
+        row = rows.ravel()
+        col = cols.ravel()
+        val = vals.ravel()
+
+
+        # mask off-grid entries and sum duplicates
+        mask = col &gt;= 0
+        row, col, val = sum_duplicates(row[mask], col[mask], val[mask])
+
+
+        # indptr, col, val = coo_tocsr(row, col, val)
+        nnz = np.bincount(row)
+        indptr = np.insert(np.cumsum(nnz),0,0)
+
+
+        mat.assemblyBegin()
+        mat.setValuesLocalCSR(indptr.astype(PETSc.IntType), col, val)
+        mat.assemblyEnd()
+
+        # set diagonal vector
+        diag = mat.getRowSum()
+        diag.scale(-1.0)
+        mat.setDiagonal(diag)
+
+        return mat
+
+
+    def construct_rhs(self, in_place=True):
+        &#34;&#34;&#34;
+        Construct the right-hand-side vector
+        i.e. vector b in Ax = b
+
+        Boundary conditions are grabbed from the dictionary and
+        summed to the rhs.
+        Be careful of duplicate entries on the corners!!
+        &#34;&#34;&#34;
+        if in_place:
+            rhs = self.rhs
+        else:
+            rhs = MeshVariable(&#39;rhs&#39;, self.dm)
+        
+        vec = -1.0*self.heat_sources[:]
+
+        for wall in self.bc:
+            val  = self.bc[wall][&#39;val&#39;]
+            flux = self.bc[wall][&#39;flux&#39;]
+            mask = self.bc[wall][&#39;mask&#39;]
+            if flux:
+                vec[mask] += val
+            else:
+                vec[mask] = val
+
+        rhs[:] = vec
+        return rhs
+
+
+    def solve(self, matrix=None, rhs=None):
+        &#34;&#34;&#34;
+        Construct the matrix A and vector b in Ax = b
+        and solve for x
+
+        GMRES method is default
+        &#34;&#34;&#34;
+        if matrix is None:
+            matrix = self.construct_matrix()
+        if rhs is None:
+            rhs = self.construct_rhs()
+        res = self.temperature
+
+        ksp = self.ksp
+        ksp.setOperators(matrix)
+        ksp.solve(rhs._gdata, res._gdata)
+        # We should hand this back to local vectors
+        return res[:]
+
+
+    def sync(self, vector):
+        &#34;&#34;&#34;
+        Synchronise a vector field across all processors
+        &#34;&#34;&#34;
+        self.lvec.setArray(vector)
+        self.dm.localToGlobal(self.lvec, self.gvec)
+        self.dm.globalToLocal(self.gvec, self.lvec)
+        return self.lvec.array.copy()
+
+
+    def gradient(self, vector, **kwargs):
+        &#34;&#34;&#34;
+        Computes the gradient of a vector field
+
+        Parameters
+        ----------
+         vector : array shape(n,) size of the mesh
+
+        Returns
+        -------
+         grad   : array shape(dim,n) gradient in each direction
+        &#34;&#34;&#34;
+        return np.gradient(vector.reshape(self.n), *self.grid_coords[::-1], **kwargs)
+
+
+    def heatflux(self):
+        &#34;&#34;&#34;
+        Compute the heat flux based on stored vector fields
+        - temperature
+        - diffusivity
+
+        Returns
+        -------
+         Q : array shape(dim,n) heat flux in each direction
+        &#34;&#34;&#34;
+        T = self.temperature[:]
+        k = self.diffusivity[:] * -1
+        divT = np.array(self.gradient(T))
+        q = []
+        for i in range(0, self.dim):
+            div = k*divT[i].ravel()
+            q.append(div)
+
+        return np.array(q)
+
+
+    def isosurface(self, vector, isoval, axis=0, interp=&#39;nearest&#39;, return_indices=False):
+        &#34;&#34;&#34;
+        Calculate an isosurface along a given axis
+        (So far this is only working for axis=0 and in serial)
+
+        Parameters
+        ----------
+         vector : array, the same size as the mesh (n,)
+         isoval : float, isosurface value
+         axis   : int, axis to generate the isosurface
+         interp : str, method can be either
+            &#39;nearest&#39; - nearest neighbour interpolation
+            &#39;linear&#39;  - linear interpolation
+         return_indices : bool (default=False)
+            return the coordinate index
+
+        Returns
+        -------
+         z_interp : isosurface the same size as the specified axis
+         indices  : int, same size as axis (if return_indices is True)
+        &#34;&#34;&#34;
+        Vcube = vector.reshape(self.n)
+        Zcube = self.coords[:,::-1][:,axis].reshape(self.n)
+        sort_idx = ((Vcube - isoval)**2).argsort(axis=axis)    
+        i0 = sort_idx[0]
+        # z0 = Zcube.take(i0)
+        
+        obj = []
+        for d in range(0, self.dim):
+            obj.append( slice(0, self.n[d]) )
+        obj.pop(axis)
+        
+        idx = list(np.mgrid[obj])
+        idx.insert(axis, i0)
+        z0 = Zcube[idx]
+
+        z_interp = z0
+        if interp == &#39;linear&#39;:
+            v0 = Vcube[idx]
+            
+            # identify next nearest node
+            i1 = sort_idx[1]
+            idx[axis] = i1
+            z1 = Zcube[idx]
+            v1 = Vcube[idx]
+
+            vmin = np.minimum(v0, v1)
+            vmax = np.maximum(v0, v1)
+            ratio = np.vstack([np.ones_like(vmax)*isoval, vmin, vmax])
+            ratio -= ratio.min(axis=0)
+            ratio /= ratio.max(axis=0)
+            z_interp = ratio[0]*z1 + (1.0 - ratio[0])*z0
+
+        if return_indices:
+            Bcube = np.zeros_like(Vcube, dtype=bool)
+            idx[axis] = i0
+            Bcube[idx] = True
+            indices = np.where(Bcube.ravel())[0]
+            return z_interp, indices
+        else:
+            return z_interp
+
+
+    def save_mesh_to_hdf5(self, filename):
+        &#34;&#34;&#34;
+        Save important mesh information to an HDF5 file
+        including bounding box and resolution.
+
+        These are saved under the topology group
+
+        Parameters
+        ----------
+         filename : file to put .h5 file
+        &#34;&#34;&#34;
+
+        import h5py
+
+        filename = str(filename)
+        if not filename.endswith(&#39;.h5&#39;):
+            filename += &#39;.h5&#39;
+
+        ViewHDF5 = PETSc.Viewer()
+        ViewHDF5.createHDF5(filename, mode=&#39;w&#39;)
+        ViewHDF5.view(obj=self.dm)
+        ViewHDF5.destroy()
+
+        if comm.rank == 0:
+            # Every processor is writing the same thing
+            f = h5py.File(filename, &#39;r+&#39;)
+            f.create_group(&#39;topology&#39;)
+            topo = f[&#39;topology&#39;]
+
+            # create attributes
+            extent = self.extent.reshape(self.dim,-1)
+            minCoord = extent[:,0]
+            maxCoord = extent[:,1]
+            shape = self.dm.getSizes()
+
+            topo.attrs.create(&#39;minCoord&#39;, minCoord[::-1])
+            topo.attrs.create(&#39;maxCoord&#39;, maxCoord[::-1])
+            topo.attrs.create(&#39;shape&#39;, np.array(shape)[::-1])
+
+            f.close()
+
+
+    def save_field_to_hdf5(self, filename, *args, **kwargs):
+        &#34;&#34;&#34;
+        Saves data on the mesh to an HDF5 file
+         e.g. height, rainfall, sea level, etc.
+
+        Pass these as arguments or keyword arguments for
+        their names to be saved to the hdf5 file
+        &#34;&#34;&#34;
+        import os.path
+
+        filename = str(filename)
+        if not filename.endswith(&#39;.h5&#39;):
+            filename += &#39;.h5&#39;
+
+        # write mesh if it doesn&#39;t exist
+        # if not os.path.isfile(file):
+        #     self.save_mesh_to_hdf5(file)
+
+        kwdict = kwargs
+        for i, arg in enumerate(args):
+            key = &#34;arr_{}&#34;.format(i)
+            if key in kwdict.keys():
+                raise ValueError(&#34;Cannot use un-named variables\
+                                  and keyword: {}&#34;.format(key))
+            kwdict[key] = arg
+
+        vec = self.gvec.duplicate()
+
+        # change mode to append if file already exists
+        # set mode to &#34;a&#34; after first write
+        if os.path.isfile(filename):
+            mode = &#39;a&#39;
+        else:
+            mode = &#39;w&#39;
+
+
+        for key in kwdict:
+            val = kwdict[key]
+            try:
+                vec.setArray(val)
+            except:
+                self.lvec.setArray(val)
+                self.dm.localToGlobal(self.lvec, vec)
+
+            vec.setName(key)
+
+            ViewHDF5 = PETSc.Viewer()
+            ViewHDF5.createHDF5(filename, mode=mode)
+            ViewHDF5.view(obj=vec)
+            ViewHDF5.destroy()
+            mode = &#34;a&#34;
+
+        vec.destroy()
+
+
+    def save_vector_to_hdf5(self, filename, *args, **kwargs):
+        &#34;&#34;&#34;
+        Saves vector on the mesh to an HDF5 file
+         e.g. heat flux field.
+
+        Pass these as arguments or keyword arguments for
+        their names to be saved to the hdf5 file
+
+        Each argument with x,y,z direction tuple
+         e.g. Q=(Qx, Qy, Qz)
+        &#34;&#34;&#34;
+        import os.path
+
+        filename = str(filename)
+        if not filename.endswith(&#39;.h5&#39;):
+            filename += &#39;.h5&#39;
+
+        kwdict = kwargs
+        for i, arg in enumerate(args):
+            key = &#34;arr_{}&#34;.format(i)
+            if key in kwdict.keys():
+                raise ValueError(&#34;Cannot use un-named variables\
+                                  and keyword: {}&#34;.format(key))
+            kwdict[key] = arg
+
+        # change mode to append if file already exists
+        # set mode to &#34;a&#34; after first write
+        if os.path.isfile(filename):
+            mode = &#39;a&#39;
+        else:
+            mode = &#39;w&#39;
+
+
+        # This is a flattened dim x n global vector
+        gvec = self.dm.getCoordinates().duplicate()
+
+        for key in kwdict:
+            val = np.array(kwdict[key]).T.ravel()
+
+            # vx, vy, vz = kwdict[key]
+            # val = np.column_stack([vx, vy, vz]).ravel()
+
+            gvec.assemblyBegin()
+            gvec.setValuesLocal(np.arange(val.size, dtype=PETSc.IntType), val)
+            gvec.assemblyEnd()
+            gvec.setName(key)
+
+            ViewHDF5 = PETSc.Viewer()
+            ViewHDF5.createHDF5(filename, mode=mode)
+            ViewHDF5.view(obj=gvec)
+            ViewHDF5.destroy()
+            mode = &#34;a&#34;
+
+        gvec.destroy()</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="conduction.solver.diffusionNd.DiffusionND" href="diffusionNd.html#conduction.solver.diffusionNd.DiffusionND">DiffusionND</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="conduction.solver.conductionNd.ConductionND.boundary_condition"><code class="name flex">
+<span>def <span class="ident">boundary_condition</span></span>(<span>self, wall, val, flux=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set the boundary conditions on each wall of the domain.
+By default each wall is a Neumann (flux) condition.
+If flux=True, positive val indicates a flux vector towards the centre
+of the domain.</p>
+<p>val can be a vector with the same number of elements as the wall</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def boundary_condition(self, wall, val, flux=True):
+    &#34;&#34;&#34;
+    Set the boundary conditions on each wall of the domain.
+    By default each wall is a Neumann (flux) condition.
+    If flux=True, positive val indicates a flux vector towards the centre
+    of the domain.
+
+    val can be a vector with the same number of elements as the wall
+    &#34;&#34;&#34;
+    wall = str(wall)
+
+    if wall in self.bc:
+        self.bc[wall][&#34;val&#34;]  = np.array(val, copy=True)
+        self.bc[wall][&#34;flux&#34;] = bool(flux)
+        d = self.bc[wall]
+
+        mask = d[&#39;mask&#39;]
+
+        if flux:
+            self.dirichlet_mask[mask] = False
+            self.bc[wall][&#34;val&#34;] /= -d[&#39;delta&#39;]
+        else:
+            self.dirichlet_mask[mask] = True
+
+    else:
+        raise ValueError(&#34;Wall should be one of {}&#34;.format(self.bc.keys()))</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.construct_matrix"><code class="name flex">
+<span>def <span class="ident">construct_matrix</span></span>(<span>self, in_place=True, derivative=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct the coefficient matrix
+i.e. matrix A in Ax = b</p>
+<p>We vectorise the 7-point stencil for fast matrix insertion.
+An extra border of dummy values around the domain allows for automatic
+Neumann (flux) boundary creation.
+These are stomped on if there are any Dirichlet conditions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def construct_matrix(self, in_place=True, derivative=False):
+    &#34;&#34;&#34;
+    Construct the coefficient matrix
+    i.e. matrix A in Ax = b
+
+    We vectorise the 7-point stencil for fast matrix insertion.
+    An extra border of dummy values around the domain allows for automatic
+    Neumann (flux) boundary creation.
+    These are stomped on if there are any Dirichlet conditions.
+
+    &#34;&#34;&#34;
+
+    if in_place:
+        mat = self.mat
+    else:
+        mat = self._initialise_matrix()
+
+    nodes = self.nodes
+    nn = self.nn
+    n = self.n
+    dim = self.dim
+
+    index = self.index
+
+    rows = self.rows
+    cols = self.cols
+    vals = self.vals
+
+    dirichlet_mask = self.dirichlet_mask
+
+    u = self.diffusivity[:].reshape(n)
+    k = np.pad(u, self.width, &#39;constant&#39;, constant_values=0)
+
+    for i in range(0, self.stencil_width):
+        obj = tuple(self.closure[i])
+
+        rows[i] = nodes
+        cols[i] = index[obj].ravel()
+
+        distance = np.linalg.norm(self.coords[cols[i]] - self.coords, axis=1)
+        distance[distance==0] = 1e-12 # protect against dividing by zero
+        delta = 1.0/(2.0*distance**2)
+
+        vals[i] = delta*(k[obj] + u).ravel()
+
+
+    # Dirichlet boundary conditions (duplicates are summed)
+    cols[:,dirichlet_mask] = nodes[dirichlet_mask]
+    vals[:,dirichlet_mask] = 0.0
+
+    # zero off-grid coordinates
+    vals[cols &lt; 0] = 0.0
+
+    # centre point
+    vals[-1] = 0.0
+    if derivative:
+        vals[-1][dirichlet_mask] = 0.
+    else:
+        vals[-1][dirichlet_mask] = -1.0
+
+
+    row = rows.ravel()
+    col = cols.ravel()
+    val = vals.ravel()
+
+
+    # mask off-grid entries and sum duplicates
+    mask = col &gt;= 0
+    row, col, val = sum_duplicates(row[mask], col[mask], val[mask])
+
+
+    # indptr, col, val = coo_tocsr(row, col, val)
+    nnz = np.bincount(row)
+    indptr = np.insert(np.cumsum(nnz),0,0)
+
+
+    mat.assemblyBegin()
+    mat.setValuesLocalCSR(indptr.astype(PETSc.IntType), col, val)
+    mat.assemblyEnd()
+
+    # set diagonal vector
+    diag = mat.getRowSum()
+    diag.scale(-1.0)
+    mat.setDiagonal(diag)
+
+    return mat</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.construct_rhs"><code class="name flex">
+<span>def <span class="ident">construct_rhs</span></span>(<span>self, in_place=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct the right-hand-side vector
+i.e. vector b in Ax = b</p>
+<p>Boundary conditions are grabbed from the dictionary and
+summed to the rhs.
+Be careful of duplicate entries on the corners!!</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def construct_rhs(self, in_place=True):
+    &#34;&#34;&#34;
+    Construct the right-hand-side vector
+    i.e. vector b in Ax = b
+
+    Boundary conditions are grabbed from the dictionary and
+    summed to the rhs.
+    Be careful of duplicate entries on the corners!!
+    &#34;&#34;&#34;
+    if in_place:
+        rhs = self.rhs
+    else:
+        rhs = MeshVariable(&#39;rhs&#39;, self.dm)
+    
+    vec = -1.0*self.heat_sources[:]
+
+    for wall in self.bc:
+        val  = self.bc[wall][&#39;val&#39;]
+        flux = self.bc[wall][&#39;flux&#39;]
+        mask = self.bc[wall][&#39;mask&#39;]
+        if flux:
+            vec[mask] += val
+        else:
+            vec[mask] = val
+
+    rhs[:] = vec
+    return rhs</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.create_meshVariable"><code class="name flex">
+<span>def <span class="ident">create_meshVariable</span></span>(<span>self, name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_meshVariable(self, name):
+    return MeshVariable(name, self.dm)</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.find_neighbours"><code class="name flex">
+<span>def <span class="ident">find_neighbours</span></span>(<span>self, width=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Find node neighbours for each point in the domain</p>
+<p>Returns a point cloud of neighbours shape(n,nneighbours)
+-1 indicates a null value</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_neighbours(self, width=1):
+    &#34;&#34;&#34;
+    Find node neighbours for each point in the domain
+
+    Returns a point cloud of neighbours shape(n,nneighbours)
+    -1 indicates a null value
+    &#34;&#34;&#34;
+
+    nodes = self.nodes
+    dim = self.dim
+    n = self.n
+
+    # setup new stencil
+    stencil_width = 2*self.dim*width + 1
+    neighbours = np.empty((stencil_width, self.nn), dtype=PETSc.IntType)
+    index = np.pad(nodes.reshape(n), width, &#39;constant&#39;, constant_values=-1)
+
+    closure = []
+    for w in range(width, 0, -1):
+        closure_array = self._get_closure_array(dim, w, width)
+        closure.extend(closure_array[:-1])
+    closure.append(closure_array[-1]) # centre node at last
+
+    # create closure object
+    closure = self._create_closure_object(closure, width)
+
+    for i in range(0, stencil_width):
+        obj = closure[i]
+        neighbours[i] = index[obj].ravel()
+
+    return neighbours.T</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.gradient"><code class="name flex">
+<span>def <span class="ident">gradient</span></span>(<span>self, vector, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Computes the gradient of a vector field</p>
+<h2 id="parameters">Parameters</h2>
+<p>vector : array shape(n,) size of the mesh</p>
+<h2 id="returns">Returns</h2>
+<p>grad
+: array shape(dim,n) gradient in each direction</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def gradient(self, vector, **kwargs):
+    &#34;&#34;&#34;
+    Computes the gradient of a vector field
+
+    Parameters
+    ----------
+     vector : array shape(n,) size of the mesh
+
+    Returns
+    -------
+     grad   : array shape(dim,n) gradient in each direction
+    &#34;&#34;&#34;
+    return np.gradient(vector.reshape(self.n), *self.grid_coords[::-1], **kwargs)</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.heatflux"><code class="name flex">
+<span>def <span class="ident">heatflux</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compute the heat flux based on stored vector fields
+- temperature
+- diffusivity</p>
+<h2 id="returns">Returns</h2>
+<p>Q : array shape(dim,n) heat flux in each direction</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def heatflux(self):
+    &#34;&#34;&#34;
+    Compute the heat flux based on stored vector fields
+    - temperature
+    - diffusivity
+
+    Returns
+    -------
+     Q : array shape(dim,n) heat flux in each direction
+    &#34;&#34;&#34;
+    T = self.temperature[:]
+    k = self.diffusivity[:] * -1
+    divT = np.array(self.gradient(T))
+    q = []
+    for i in range(0, self.dim):
+        div = k*divT[i].ravel()
+        q.append(div)
+
+    return np.array(q)</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.isosurface"><code class="name flex">
+<span>def <span class="ident">isosurface</span></span>(<span>self, vector, isoval, axis=0, interp='nearest', return_indices=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate an isosurface along a given axis
+(So far this is only working for axis=0 and in serial)</p>
+<h2 id="parameters">Parameters</h2>
+<p>vector : array, the same size as the mesh (n,)
+isoval : float, isosurface value
+axis
+: int, axis to generate the isosurface
+interp : str, method can be either
+'nearest' - nearest neighbour interpolation
+'linear'
+- linear interpolation
+return_indices : bool (default=False)
+return the coordinate index</p>
+<h2 id="returns">Returns</h2>
+<p>z_interp : isosurface the same size as the specified axis
+indices
+: int, same size as axis (if return_indices is True)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def isosurface(self, vector, isoval, axis=0, interp=&#39;nearest&#39;, return_indices=False):
+    &#34;&#34;&#34;
+    Calculate an isosurface along a given axis
+    (So far this is only working for axis=0 and in serial)
+
+    Parameters
+    ----------
+     vector : array, the same size as the mesh (n,)
+     isoval : float, isosurface value
+     axis   : int, axis to generate the isosurface
+     interp : str, method can be either
+        &#39;nearest&#39; - nearest neighbour interpolation
+        &#39;linear&#39;  - linear interpolation
+     return_indices : bool (default=False)
+        return the coordinate index
+
+    Returns
+    -------
+     z_interp : isosurface the same size as the specified axis
+     indices  : int, same size as axis (if return_indices is True)
+    &#34;&#34;&#34;
+    Vcube = vector.reshape(self.n)
+    Zcube = self.coords[:,::-1][:,axis].reshape(self.n)
+    sort_idx = ((Vcube - isoval)**2).argsort(axis=axis)    
+    i0 = sort_idx[0]
+    # z0 = Zcube.take(i0)
+    
+    obj = []
+    for d in range(0, self.dim):
+        obj.append( slice(0, self.n[d]) )
+    obj.pop(axis)
+    
+    idx = list(np.mgrid[obj])
+    idx.insert(axis, i0)
+    z0 = Zcube[idx]
+
+    z_interp = z0
+    if interp == &#39;linear&#39;:
+        v0 = Vcube[idx]
+        
+        # identify next nearest node
+        i1 = sort_idx[1]
+        idx[axis] = i1
+        z1 = Zcube[idx]
+        v1 = Vcube[idx]
+
+        vmin = np.minimum(v0, v1)
+        vmax = np.maximum(v0, v1)
+        ratio = np.vstack([np.ones_like(vmax)*isoval, vmin, vmax])
+        ratio -= ratio.min(axis=0)
+        ratio /= ratio.max(axis=0)
+        z_interp = ratio[0]*z1 + (1.0 - ratio[0])*z0
+
+    if return_indices:
+        Bcube = np.zeros_like(Vcube, dtype=bool)
+        idx[axis] = i0
+        Bcube[idx] = True
+        indices = np.where(Bcube.ravel())[0]
+        return z_interp, indices
+    else:
+        return z_interp</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.refine"><code class="name flex">
+<span>def <span class="ident">refine</span></span>(<span>self, fn, axis)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pass a function to apply to the x,y,z coordinates on the mesh.
+The domain will be redefined accordingly.</p>
+<h2 id="notes">Notes</h2>
+<p>We do it this way to make sure the domain is balanced across
+processors. Adding new nodes would imbalance the matrix.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def refine(self, fn, axis):
+    &#34;&#34;&#34;
+    Pass a function to apply to the x,y,z coordinates on the mesh.
+    The domain will be redefined accordingly.
+
+    Notes
+    -----
+     We do it this way to make sure the domain is balanced across
+     processors. Adding new nodes would imbalance the matrix.
+    &#34;&#34;&#34;
+    v = self.dm.getCoordinatesLocal()
+    coords = v.array.reshape(-1, self.dim)
+
+    coords[:,axis] = fn(coords[:,axis])
+
+    if not np.isfinite(coords).all():
+        raise ValueError(&#39;This function has created NaNs or Inf numbers&#39;)
+
+    v.setArray(coords.ravel())
+
+    self.dm.setCoordinatesLocal(v)
+
+    self._initialise_mesh_variables()
+    self._initialise_boundary_dictionary()
+    self.mat = self._initialise_matrix()</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.save_field_to_hdf5"><code class="name flex">
+<span>def <span class="ident">save_field_to_hdf5</span></span>(<span>self, filename, *args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Saves data on the mesh to an HDF5 file
+e.g. height, rainfall, sea level, etc.</p>
+<p>Pass these as arguments or keyword arguments for
+their names to be saved to the hdf5 file</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_field_to_hdf5(self, filename, *args, **kwargs):
+    &#34;&#34;&#34;
+    Saves data on the mesh to an HDF5 file
+     e.g. height, rainfall, sea level, etc.
+
+    Pass these as arguments or keyword arguments for
+    their names to be saved to the hdf5 file
+    &#34;&#34;&#34;
+    import os.path
+
+    filename = str(filename)
+    if not filename.endswith(&#39;.h5&#39;):
+        filename += &#39;.h5&#39;
+
+    # write mesh if it doesn&#39;t exist
+    # if not os.path.isfile(file):
+    #     self.save_mesh_to_hdf5(file)
+
+    kwdict = kwargs
+    for i, arg in enumerate(args):
+        key = &#34;arr_{}&#34;.format(i)
+        if key in kwdict.keys():
+            raise ValueError(&#34;Cannot use un-named variables\
+                              and keyword: {}&#34;.format(key))
+        kwdict[key] = arg
+
+    vec = self.gvec.duplicate()
+
+    # change mode to append if file already exists
+    # set mode to &#34;a&#34; after first write
+    if os.path.isfile(filename):
+        mode = &#39;a&#39;
+    else:
+        mode = &#39;w&#39;
+
+
+    for key in kwdict:
+        val = kwdict[key]
+        try:
+            vec.setArray(val)
+        except:
+            self.lvec.setArray(val)
+            self.dm.localToGlobal(self.lvec, vec)
+
+        vec.setName(key)
+
+        ViewHDF5 = PETSc.Viewer()
+        ViewHDF5.createHDF5(filename, mode=mode)
+        ViewHDF5.view(obj=vec)
+        ViewHDF5.destroy()
+        mode = &#34;a&#34;
+
+    vec.destroy()</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.save_mesh_to_hdf5"><code class="name flex">
+<span>def <span class="ident">save_mesh_to_hdf5</span></span>(<span>self, filename)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Save important mesh information to an HDF5 file
+including bounding box and resolution.</p>
+<p>These are saved under the topology group</p>
+<h2 id="parameters">Parameters</h2>
+<p>filename : file to put .h5 file</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_mesh_to_hdf5(self, filename):
+    &#34;&#34;&#34;
+    Save important mesh information to an HDF5 file
+    including bounding box and resolution.
+
+    These are saved under the topology group
+
+    Parameters
+    ----------
+     filename : file to put .h5 file
+    &#34;&#34;&#34;
+
+    import h5py
+
+    filename = str(filename)
+    if not filename.endswith(&#39;.h5&#39;):
+        filename += &#39;.h5&#39;
+
+    ViewHDF5 = PETSc.Viewer()
+    ViewHDF5.createHDF5(filename, mode=&#39;w&#39;)
+    ViewHDF5.view(obj=self.dm)
+    ViewHDF5.destroy()
+
+    if comm.rank == 0:
+        # Every processor is writing the same thing
+        f = h5py.File(filename, &#39;r+&#39;)
+        f.create_group(&#39;topology&#39;)
+        topo = f[&#39;topology&#39;]
+
+        # create attributes
+        extent = self.extent.reshape(self.dim,-1)
+        minCoord = extent[:,0]
+        maxCoord = extent[:,1]
+        shape = self.dm.getSizes()
+
+        topo.attrs.create(&#39;minCoord&#39;, minCoord[::-1])
+        topo.attrs.create(&#39;maxCoord&#39;, maxCoord[::-1])
+        topo.attrs.create(&#39;shape&#39;, np.array(shape)[::-1])
+
+        f.close()</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.save_vector_to_hdf5"><code class="name flex">
+<span>def <span class="ident">save_vector_to_hdf5</span></span>(<span>self, filename, *args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Saves vector on the mesh to an HDF5 file
+e.g. heat flux field.</p>
+<p>Pass these as arguments or keyword arguments for
+their names to be saved to the hdf5 file</p>
+<p>Each argument with x,y,z direction tuple
+e.g. Q=(Qx, Qy, Qz)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_vector_to_hdf5(self, filename, *args, **kwargs):
+    &#34;&#34;&#34;
+    Saves vector on the mesh to an HDF5 file
+     e.g. heat flux field.
+
+    Pass these as arguments or keyword arguments for
+    their names to be saved to the hdf5 file
+
+    Each argument with x,y,z direction tuple
+     e.g. Q=(Qx, Qy, Qz)
+    &#34;&#34;&#34;
+    import os.path
+
+    filename = str(filename)
+    if not filename.endswith(&#39;.h5&#39;):
+        filename += &#39;.h5&#39;
+
+    kwdict = kwargs
+    for i, arg in enumerate(args):
+        key = &#34;arr_{}&#34;.format(i)
+        if key in kwdict.keys():
+            raise ValueError(&#34;Cannot use un-named variables\
+                              and keyword: {}&#34;.format(key))
+        kwdict[key] = arg
+
+    # change mode to append if file already exists
+    # set mode to &#34;a&#34; after first write
+    if os.path.isfile(filename):
+        mode = &#39;a&#39;
+    else:
+        mode = &#39;w&#39;
+
+
+    # This is a flattened dim x n global vector
+    gvec = self.dm.getCoordinates().duplicate()
+
+    for key in kwdict:
+        val = np.array(kwdict[key]).T.ravel()
+
+        # vx, vy, vz = kwdict[key]
+        # val = np.column_stack([vx, vy, vz]).ravel()
+
+        gvec.assemblyBegin()
+        gvec.setValuesLocal(np.arange(val.size, dtype=PETSc.IntType), val)
+        gvec.assemblyEnd()
+        gvec.setName(key)
+
+        ViewHDF5 = PETSc.Viewer()
+        ViewHDF5.createHDF5(filename, mode=mode)
+        ViewHDF5.view(obj=gvec)
+        ViewHDF5.destroy()
+        mode = &#34;a&#34;
+
+    gvec.destroy()</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.solve"><code class="name flex">
+<span>def <span class="ident">solve</span></span>(<span>self, matrix=None, rhs=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct the matrix A and vector b in Ax = b
+and solve for x</p>
+<p>GMRES method is default</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def solve(self, matrix=None, rhs=None):
+    &#34;&#34;&#34;
+    Construct the matrix A and vector b in Ax = b
+    and solve for x
+
+    GMRES method is default
+    &#34;&#34;&#34;
+    if matrix is None:
+        matrix = self.construct_matrix()
+    if rhs is None:
+        rhs = self.construct_rhs()
+    res = self.temperature
+
+    ksp = self.ksp
+    ksp.setOperators(matrix)
+    ksp.solve(rhs._gdata, res._gdata)
+    # We should hand this back to local vectors
+    return res[:]</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.sync"><code class="name flex">
+<span>def <span class="ident">sync</span></span>(<span>self, vector)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Synchronise a vector field across all processors</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sync(self, vector):
+    &#34;&#34;&#34;
+    Synchronise a vector field across all processors
+    &#34;&#34;&#34;
+    self.lvec.setArray(vector)
+    self.dm.localToGlobal(self.lvec, self.gvec)
+    self.dm.globalToLocal(self.gvec, self.lvec)
+    return self.lvec.array.copy()</code></pre>
+</details>
+</dd>
+<dt id="conduction.solver.conductionNd.ConductionND.update_properties"><code class="name flex">
+<span>def <span class="ident">update_properties</span></span>(<span>self, diffusivity, heat_sources)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Update diffusivity and heat sources</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_properties(self, diffusivity, heat_sources):
+    &#34;&#34;&#34;
+    Update diffusivity and heat sources
+    &#34;&#34;&#34;
+
+
+    self.diffusivity[:] = diffusivity
+    self.heat_sources[:] = heat_sources</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="conduction.solver" href="index.html">conduction.solver</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="conduction.solver.conductionNd.ConductionND" href="#conduction.solver.conductionNd.ConductionND">ConductionND</a></code></h4>
+<ul class="two-column">
+<li><code><a title="conduction.solver.conductionNd.ConductionND.boundary_condition" href="#conduction.solver.conductionNd.ConductionND.boundary_condition">boundary_condition</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.construct_matrix" href="#conduction.solver.conductionNd.ConductionND.construct_matrix">construct_matrix</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.construct_rhs" href="#conduction.solver.conductionNd.ConductionND.construct_rhs">construct_rhs</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.create_meshVariable" href="#conduction.solver.conductionNd.ConductionND.create_meshVariable">create_meshVariable</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.find_neighbours" href="#conduction.solver.conductionNd.ConductionND.find_neighbours">find_neighbours</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.gradient" href="#conduction.solver.conductionNd.ConductionND.gradient">gradient</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.heatflux" href="#conduction.solver.conductionNd.ConductionND.heatflux">heatflux</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.isosurface" href="#conduction.solver.conductionNd.ConductionND.isosurface">isosurface</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.refine" href="#conduction.solver.conductionNd.ConductionND.refine">refine</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.save_field_to_hdf5" href="#conduction.solver.conductionNd.ConductionND.save_field_to_hdf5">save_field_to_hdf5</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.save_mesh_to_hdf5" href="#conduction.solver.conductionNd.ConductionND.save_mesh_to_hdf5">save_mesh_to_hdf5</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.save_vector_to_hdf5" href="#conduction.solver.conductionNd.ConductionND.save_vector_to_hdf5">save_vector_to_hdf5</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.solve" href="#conduction.solver.conductionNd.ConductionND.solve">solve</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.sync" href="#conduction.solver.conductionNd.ConductionND.sync">sync</a></code></li>
+<li><code><a title="conduction.solver.conductionNd.ConductionND.update_properties" href="#conduction.solver.conductionNd.ConductionND.update_properties">update_properties</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

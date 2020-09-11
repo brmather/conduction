@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>conduction.interpolation.interpolator API documentation</title>
+<meta name="description" content="Copyright 2017 Ben Mather …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>conduction.interpolation.interpolator</code></h1>
+</header>
+<section id="section-intro">
+<p>Copyright 2017 Ben Mather</p>
+<p>This file is part of Conduction <a href="https://git.dias.ie/itherc/conduction/">https://git.dias.ie/itherc/conduction/</a></p>
+<p>Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.</p>
+<p>Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the
+GNU Lesser General Public License for more details.</p>
+<p>You should have received a copy of the GNU Lesser General Public License
+along with Conduction.
+If not, see <a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Copyright 2017 Ben Mather
+
+This file is part of Conduction &lt;https://git.dias.ie/itherc/conduction/&gt;
+
+Conduction is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or any later version.
+
+Conduction is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Conduction.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+&#34;&#34;&#34;
+
+from scipy.interpolate import RegularGridInterpolator as RGI
+import itertools
+import numpy as np
+
+class RegularGridInterpolator(RGI):
+
+    def __init__(self, points, values, method=&#34;linear&#34;, bounds_error=False, fill_value=np.nan):
+
+        super(RegularGridInterpolator, self).__init__(points, values, method, bounds_error, fill_value)
+
+
+    def adjoint(self, xi, dxi, method=None):
+        &#34;&#34;&#34;
+        Interpolation adjoint using the derivatives dxi at coordinates xi
+        Parameters
+        ----------
+        xi : ndarray of shape (..., ndim)
+            The coordinates to sample the gridded data at
+        dxi : ndarray of shape (..., ndim)
+             The derivatives at the coordinates xi
+        method : str
+                The method of interplolation to perform.
+                Supports either &#39;linear&#39; or &#39;nearest&#39;
+        &#34;&#34;&#34;
+        if method is None:
+            method = self.method
+            
+        self.derivative = dxi
+        indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
+        if method == &#34;linear&#34;:
+            result = self._evaluate_linear_adjoint(indices, norm_distances, out_of_bounds)
+        elif method == &#34;nearest&#34;:
+            result = self._evaluate_nearest_adjoint(indices, norm_distances, out_of_bounds)
+        return result
+
+    def _evaluate_linear_adjoint(self, indices, norm_distances, out_of_bounds):
+        # slice for broadcasting over trailing dimensions in self.values
+        vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
+        # find relevant values
+        # each i and i+1 represents a edge
+        edges = itertools.product(*[[i, i + 1] for i in indices])
+        values = np.zeros_like(self.values)
+        for edge_indices in edges:
+            weight = 1.
+            for ei, i, yi in zip(edge_indices, indices, norm_distances):
+                weight *= np.where(ei == i, 1 - yi, yi)
+            values[edge_indices] += np.asarray(self.derivative) * weight[vslice]
+        return values
+
+    def _evaluate_nearest_adjoint(self, indices, norm_distances, out_of_bounds):
+        idx_res = []
+        values = np.zeros_like(self.values)
+        for i, yi in zip(indices, norm_distances):
+            idx_res.append(np.where(yi &lt;= 0.5, i, i + 1))
+        values[idx_res] = self.derivative
+        return values
+
+
+class KDTreeInterpolator(object):
+    &#34;&#34;&#34;
+    This object implements scipy.spatial.cKDTree for fast nearest-neighbour lookup
+    and interpolates the coordinate based on the next closes value
+
+    Arguments
+    ---------
+     points        : ndarray(n,dim) arbitrary set of points to interpolate over
+     values        : ndarray(n,) values at the points
+     bounds_error  : bool, optional
+     fill_value    : number, optional
+
+    Methods
+    -------
+     __call__
+     adjoint
+
+    &#34;&#34;&#34;
+    def __init__(self, points, values, bounds_error=False, fill_value=np.nan):
+        from scipy.spatial import cKDTree
+        self.tree = cKDTree(points)
+        data = self.tree.data
+        npoints, ndim = data.shape
+        
+        self.fill_value = fill_value
+        self.bounds_error = bounds_error
+        
+        bbox = []
+        for i in range(0, ndim):
+            bbox.append((data[:,i].min(), data[:,i].max()))
+        
+        self.npoints = npoints
+        self.ndim = ndim
+        self.bbox = bbox
+        
+        self._values = np.ravel(values)
+        
+    def __call__(self, xi, *args, **kwargs):
+        idx, d, bmask = self._find_indices(xi)
+        
+        if self.bounds_error and bmask.any():
+            bidx = np.nonzero(bmask)[0]
+            raise ValueError(&#34;Coordinates in xi are out of bounds in:\n {}&#34;.format(bidx))
+        
+        vi = self.values[idx]
+        if not self.bounds_error and self.fill_value is not None:
+            vi[bmask] = self.fill_value
+        
+        return vi
+    
+    def adjoint(self, xi, dxi, *args, **kwargs):
+        idx, d, bmask = self._find_indices(xi)
+        
+        if self.bounds_error and bmask.any():
+            bidx = np.nonzero(bmask)[0]
+            raise ValueError(&#34;Coordinates in xi are out of bounds in:\n {}&#34;.format(bidx))
+        
+        dv = np.zeros_like(self.values)
+
+        # remove indices that are out of bounds
+        idx_inbounds = idx[~bmask]
+        
+        ux = np.unique(idx_inbounds)
+        for u in ux:
+            dv[u] = dxi[idx==u].sum()
+
+        if not self.bounds_error and self.fill_value is not None:
+            dv[idx][bmask] = self.fill_value
+            
+        return dv
+    
+    def _find_indices(self, xi):
+        d, idx = self.tree.query(xi)
+        bbox = self.bbox
+        ndim = self.ndim
+        
+        bounds = np.zeros(idx.size, dtype=bool)
+        for i in range(0, ndim):
+            bmin, bmax = bbox[i]
+            mask = np.logical_or(xi[:,i] &lt; bmin, xi[:,i] &gt; bmax)
+            bounds[mask] = True
+            
+        return idx, d, bounds
+
+
+    @property
+    def values(self):
+        return self._values
+    @values.setter
+    def values(self, value):
+        self._values = value.ravel()
+    @values.getter
+    def values(self):
+        return self._values</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="conduction.interpolation.interpolator.KDTreeInterpolator"><code class="flex name class">
+<span>class <span class="ident">KDTreeInterpolator</span></span>
+<span>(</span><span>points, values, bounds_error=False, fill_value=nan)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This object implements scipy.spatial.cKDTree for fast nearest-neighbour lookup
+and interpolates the coordinate based on the next closes value</p>
+<h2 id="arguments">Arguments</h2>
+<p>points
+: ndarray(n,dim) arbitrary set of points to interpolate over
+values
+: ndarray(n,) values at the points
+bounds_error
+: bool, optional
+fill_value
+: number, optional</p>
+<h2 id="methods">Methods</h2>
+<p><strong>call</strong>
+adjoint</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class KDTreeInterpolator(object):
+    &#34;&#34;&#34;
+    This object implements scipy.spatial.cKDTree for fast nearest-neighbour lookup
+    and interpolates the coordinate based on the next closes value
+
+    Arguments
+    ---------
+     points        : ndarray(n,dim) arbitrary set of points to interpolate over
+     values        : ndarray(n,) values at the points
+     bounds_error  : bool, optional
+     fill_value    : number, optional
+
+    Methods
+    -------
+     __call__
+     adjoint
+
+    &#34;&#34;&#34;
+    def __init__(self, points, values, bounds_error=False, fill_value=np.nan):
+        from scipy.spatial import cKDTree
+        self.tree = cKDTree(points)
+        data = self.tree.data
+        npoints, ndim = data.shape
+        
+        self.fill_value = fill_value
+        self.bounds_error = bounds_error
+        
+        bbox = []
+        for i in range(0, ndim):
+            bbox.append((data[:,i].min(), data[:,i].max()))
+        
+        self.npoints = npoints
+        self.ndim = ndim
+        self.bbox = bbox
+        
+        self._values = np.ravel(values)
+        
+    def __call__(self, xi, *args, **kwargs):
+        idx, d, bmask = self._find_indices(xi)
+        
+        if self.bounds_error and bmask.any():
+            bidx = np.nonzero(bmask)[0]
+            raise ValueError(&#34;Coordinates in xi are out of bounds in:\n {}&#34;.format(bidx))
+        
+        vi = self.values[idx]
+        if not self.bounds_error and self.fill_value is not None:
+            vi[bmask] = self.fill_value
+        
+        return vi
+    
+    def adjoint(self, xi, dxi, *args, **kwargs):
+        idx, d, bmask = self._find_indices(xi)
+        
+        if self.bounds_error and bmask.any():
+            bidx = np.nonzero(bmask)[0]
+            raise ValueError(&#34;Coordinates in xi are out of bounds in:\n {}&#34;.format(bidx))
+        
+        dv = np.zeros_like(self.values)
+
+        # remove indices that are out of bounds
+        idx_inbounds = idx[~bmask]
+        
+        ux = np.unique(idx_inbounds)
+        for u in ux:
+            dv[u] = dxi[idx==u].sum()
+
+        if not self.bounds_error and self.fill_value is not None:
+            dv[idx][bmask] = self.fill_value
+            
+        return dv
+    
+    def _find_indices(self, xi):
+        d, idx = self.tree.query(xi)
+        bbox = self.bbox
+        ndim = self.ndim
+        
+        bounds = np.zeros(idx.size, dtype=bool)
+        for i in range(0, ndim):
+            bmin, bmax = bbox[i]
+            mask = np.logical_or(xi[:,i] &lt; bmin, xi[:,i] &gt; bmax)
+            bounds[mask] = True
+            
+        return idx, d, bounds
+
+
+    @property
+    def values(self):
+        return self._values
+    @values.setter
+    def values(self, value):
+        self._values = value.ravel()
+    @values.getter
+    def values(self):
+        return self._values</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="conduction.interpolation.interpolator.KDTreeInterpolator.values"><code class="name">var <span class="ident">values</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@values.getter
+def values(self):
+    return self._values</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="conduction.interpolation.interpolator.KDTreeInterpolator.adjoint"><code class="name flex">
+<span>def <span class="ident">adjoint</span></span>(<span>self, xi, dxi, *args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def adjoint(self, xi, dxi, *args, **kwargs):
+    idx, d, bmask = self._find_indices(xi)
+    
+    if self.bounds_error and bmask.any():
+        bidx = np.nonzero(bmask)[0]
+        raise ValueError(&#34;Coordinates in xi are out of bounds in:\n {}&#34;.format(bidx))
+    
+    dv = np.zeros_like(self.values)
+
+    # remove indices that are out of bounds
+    idx_inbounds = idx[~bmask]
+    
+    ux = np.unique(idx_inbounds)
+    for u in ux:
+        dv[u] = dxi[idx==u].sum()
+
+    if not self.bounds_error and self.fill_value is not None:
+        dv[idx][bmask] = self.fill_value
+        
+    return dv</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="conduction.interpolation.interpolator.RegularGridInterpolator"><code class="flex name class">
+<span>class <span class="ident">RegularGridInterpolator</span></span>
+<span>(</span><span>points, values, method='linear', bounds_error=False, fill_value=nan)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Interpolation on a regular grid in arbitrary dimensions</p>
+<p>The data must be defined on a regular grid; the grid spacing however may be
+uneven. Linear and nearest-neighbor interpolation are supported. After
+setting up the interpolator object, the interpolation method (<em>linear</em> or
+<em>nearest</em>) may be chosen at each evaluation.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>points</code></strong> :&ensp;<code>tuple</code> of <code>ndarray</code> of <code>float, with shapes (m1, ), &hellip;, (mn, )</code></dt>
+<dd>The points defining the regular grid in n dimensions.</dd>
+<dt><strong><code>values</code></strong> :&ensp;<code>array_like, shape (m1, &hellip;, mn, &hellip;)</code></dt>
+<dd>The data on the regular grid in n dimensions.</dd>
+<dt><strong><code>method</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The method of interpolation to perform. Supported are "linear" and
+"nearest". This parameter will become the default for the object's
+<code>__call__</code> method. Default is "linear".</dd>
+<dt><strong><code>bounds_error</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True, when interpolated values are requested outside of the
+domain of the input data, a ValueError is raised.
+If False, then <code>fill_value</code> is used.</dd>
+<dt><strong><code>fill_value</code></strong> :&ensp;<code>number</code>, optional</dt>
+<dd>If provided, the value to use for points outside of the
+interpolation domain. If None, values outside
+the domain are extrapolated.</dd>
+</dl>
+<h2 id="methods">Methods</h2>
+<p><strong>call</strong></p>
+<h2 id="notes">Notes</h2>
+<p>Contrary to LinearNDInterpolator and NearestNDInterpolator, this class
+avoids expensive triangulation of the input data by taking advantage of the
+regular grid structure.</p>
+<p>If any of <code>points</code> have a dimension of size 1, linear interpolation will
+return an array of <code>nan</code> values. Nearest-neighbor interpolation will work
+as usual in this case.</p>
+<div class="admonition versionadded">
+<p class="admonition-title">Added in version:&ensp;0.14</p>
+</div>
+<h2 id="examples">Examples</h2>
+<p>Evaluate a simple example function on the points of a 3-D grid:</p>
+<pre><code class="python-repl">&gt;&gt;&gt; from scipy.interpolate import RegularGridInterpolator
+&gt;&gt;&gt; def f(x, y, z):
+...     return 2 * x**3 + 3 * y**2 - z
+&gt;&gt;&gt; x = np.linspace(1, 4, 11)
+&gt;&gt;&gt; y = np.linspace(4, 7, 22)
+&gt;&gt;&gt; z = np.linspace(7, 9, 33)
+&gt;&gt;&gt; data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
+</code></pre>
+<p><code>data</code> is now a 3-D array with <code>data[i,j,k] = f(x[i], y[j], z[k])</code>.
+Next, define an interpolating function from this data:</p>
+<pre><code class="python-repl">&gt;&gt;&gt; my_interpolating_function = RegularGridInterpolator((x, y, z), data)
+</code></pre>
+<p>Evaluate the interpolating function at the two points
+<code>(x,y,z) = (2.1, 6.2, 8.3)</code> and <code>(3.3, 5.2, 7.1)</code>:</p>
+<pre><code class="python-repl">&gt;&gt;&gt; pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
+&gt;&gt;&gt; my_interpolating_function(pts)
+array([ 125.80469388,  146.30069388])
+</code></pre>
+<p>which is indeed a close approximation to
+<code>[f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)]</code>.</p>
+<h2 id="see-also">See Also</h2>
+<dl>
+<dt><code>NearestNDInterpolator</code></dt>
+<dd>Nearest neighbor interpolation on unstructured data in N dimensions</dd>
+</dl>
+<p><code>LinearNDInterpolator : Piecewise linear interpolant on unstructured data in N dimensions</code></p>
+<h2 id="references">References</h2>
+<p>.. [1] Python package <em>regulargrid</em> by Johannes Buchner, see
+<a href="https://pypi.python.org/pypi/regulargrid/">https://pypi.python.org/pypi/regulargrid/</a>
+.. [2] Wikipedia, "Trilinear interpolation",
+<a href="https://en.wikipedia.org/wiki/Trilinear_interpolation">https://en.wikipedia.org/wiki/Trilinear_interpolation</a>
+.. [3] Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
+and multilinear table interpolation in many dimensions." MATH.
+COMPUT. 50.181 (1988): 189-196.
+<a href="https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf">https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RegularGridInterpolator(RGI):
+
+    def __init__(self, points, values, method=&#34;linear&#34;, bounds_error=False, fill_value=np.nan):
+
+        super(RegularGridInterpolator, self).__init__(points, values, method, bounds_error, fill_value)
+
+
+    def adjoint(self, xi, dxi, method=None):
+        &#34;&#34;&#34;
+        Interpolation adjoint using the derivatives dxi at coordinates xi
+        Parameters
+        ----------
+        xi : ndarray of shape (..., ndim)
+            The coordinates to sample the gridded data at
+        dxi : ndarray of shape (..., ndim)
+             The derivatives at the coordinates xi
+        method : str
+                The method of interplolation to perform.
+                Supports either &#39;linear&#39; or &#39;nearest&#39;
+        &#34;&#34;&#34;
+        if method is None:
+            method = self.method
+            
+        self.derivative = dxi
+        indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
+        if method == &#34;linear&#34;:
+            result = self._evaluate_linear_adjoint(indices, norm_distances, out_of_bounds)
+        elif method == &#34;nearest&#34;:
+            result = self._evaluate_nearest_adjoint(indices, norm_distances, out_of_bounds)
+        return result
+
+    def _evaluate_linear_adjoint(self, indices, norm_distances, out_of_bounds):
+        # slice for broadcasting over trailing dimensions in self.values
+        vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
+        # find relevant values
+        # each i and i+1 represents a edge
+        edges = itertools.product(*[[i, i + 1] for i in indices])
+        values = np.zeros_like(self.values)
+        for edge_indices in edges:
+            weight = 1.
+            for ei, i, yi in zip(edge_indices, indices, norm_distances):
+                weight *= np.where(ei == i, 1 - yi, yi)
+            values[edge_indices] += np.asarray(self.derivative) * weight[vslice]
+        return values
+
+    def _evaluate_nearest_adjoint(self, indices, norm_distances, out_of_bounds):
+        idx_res = []
+        values = np.zeros_like(self.values)
+        for i, yi in zip(indices, norm_distances):
+            idx_res.append(np.where(yi &lt;= 0.5, i, i + 1))
+        values[idx_res] = self.derivative
+        return values</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>scipy.interpolate.interpolate.RegularGridInterpolator</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="conduction.interpolation.interpolator.RegularGridInterpolator.adjoint"><code class="name flex">
+<span>def <span class="ident">adjoint</span></span>(<span>self, xi, dxi, method=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Interpolation adjoint using the derivatives dxi at coordinates xi
+Parameters</p>
+<hr>
+<dl>
+<dt><strong><code>xi</code></strong> :&ensp;<code>ndarray</code> of <code>shape (&hellip;, ndim)</code></dt>
+<dd>The coordinates to sample the gridded data at</dd>
+<dt><strong><code>dxi</code></strong> :&ensp;<code>ndarray</code> of <code>shape (&hellip;, ndim)</code></dt>
+<dd>The derivatives at the coordinates xi</dd>
+<dt><strong><code>method</code></strong> :&ensp;<code>str</code></dt>
+<dd>The method of interplolation to perform.
+Supports either 'linear' or 'nearest'</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def adjoint(self, xi, dxi, method=None):
+    &#34;&#34;&#34;
+    Interpolation adjoint using the derivatives dxi at coordinates xi
+    Parameters
+    ----------
+    xi : ndarray of shape (..., ndim)
+        The coordinates to sample the gridded data at
+    dxi : ndarray of shape (..., ndim)
+         The derivatives at the coordinates xi
+    method : str
+            The method of interplolation to perform.
+            Supports either &#39;linear&#39; or &#39;nearest&#39;
+    &#34;&#34;&#34;
+    if method is None:
+        method = self.method
+        
+    self.derivative = dxi
+    indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
+    if method == &#34;linear&#34;:
+        result = self._evaluate_linear_adjoint(indices, norm_distances, out_of_bounds)
+    elif method == &#34;nearest&#34;:
+        result = self._evaluate_nearest_adjoint(indices, norm_distances, out_of_bounds)
+    return result</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="conduction.interpolation" href="index.html">conduction.interpolation</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="conduction.interpolation.interpolator.KDTreeInterpolator" href="#conduction.interpolation.interpolator.KDTreeInterpolator">KDTreeInterpolator</a></code></h4>
+<ul class="">
+<li><code><a title="conduction.interpolation.interpolator.KDTreeInterpolator.adjoint" href="#conduction.interpolation.interpolator.KDTreeInterpolator.adjoint">adjoint</a></code></li>
+<li><code><a title="conduction.interpolation.interpolator.KDTreeInterpolator.values" href="#conduction.interpolation.interpolator.KDTreeInterpolator.values">values</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="conduction.interpolation.interpolator.RegularGridInterpolator" href="#conduction.interpolation.interpolator.RegularGridInterpolator">RegularGridInterpolator</a></code></h4>
+<ul class="">
+<li><code><a title="conduction.interpolation.interpolator.RegularGridInterpolator.adjoint" href="#conduction.interpolation.interpolator.RegularGridInterpolator.adjoint">adjoint</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>
