@@ -30,6 +30,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python --version 
+          rm -rf conduction/Examples
           pip install -e .
    
       - name: Build docs with pdoc
