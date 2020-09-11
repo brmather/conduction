@@ -140,7 +140,7 @@ class DiffusionND(ConductionND):
             T = np.pad(temp,  self.width, 'constant', constant_values=0)
 
             for i in range(0, self.stencil_width):
-                obj = self.closure[i]
+                obj = tuple(self.closure[i])
 
                 cols[i] = index[obj].ravel()
 
