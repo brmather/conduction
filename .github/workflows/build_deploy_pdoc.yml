@@ -39,9 +39,10 @@ jobs:
           mkdir -p docs
           pdoc3 --config latex_math=True --html -o docs --force conduction 
 
-      # Note deploy key needs the ----BEGIN ... KEY---- lines too
-      - name: Deploy docs to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@3.5.9
         with:
-          deploy_key: ${{ secrets.GH_PAGES_DEPLOY_PR_KEY }}
-          publish_dir: docs/conduction
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: build # The folder the action should deploy.
+          CLEAN: true # Automatically remove deleted files from the deploy branch
