@@ -273,7 +273,7 @@ def nonlinear_ad(x, self, bc='Z'):
         dk0 += dkdk0*dk
         dT  += dkdT*dk
         da  += dkda*dk
-        print dT.min(), dT.max(), dk.min(), dk.max()
+        print(dT.min(), dT.max(), dk.min(), dk.max())
         
         dk.fill(0.0)
         

@@ -1,40 +1,58 @@
-
-# coding: utf-8
-
-# # Inversion
-# 
-# We benchmark the following models to the inverse heat conduction problem:
-# 
-# 1. Finite difference - difference between two forward models
-# 2. Tangent linear - derivative of the problem in forward mode
-# 3. Adjoint model - gradient of the objective function w.r.t. inversion variables
-
-# In[1]:
+import pytest
 
 import numpy as np
-from time import clock
-from conduction import ConductionND
-from conduction.inversion import InvObservation, InvPrior
-from conduction import InversionND
-from petsc4py import PETSc
+from conduction import ConductionND, InversionND
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 
+
+@pytest.fixture(scope="function")
+def load_1D_regular_mesh():
+    minX, maxX = 0.0, 35e3
+    nx = 21
+
+    return ConductionND((minX,), (maxX,), (nx,))
+
+@pytest.fixture(scope="function")
+def load_2D_regular_mesh():
+    minX, maxX = 0.0, 35e3
+    minY, maxY = 0.0, 35e3
+    nx, ny = 21, 21
+
+    return ConductionND((minX,minY), (maxX, maxY), (nx,ny))
+
+@pytest.fixture(scope="function")
+def load_3D_regular_mesh():
+    minX, maxX = 0.0, 35e3
+    minY, maxY = 0.0, 35e3
+    minZ, maxZ = 0.0, 35e3
+    nx, ny, nz = 21, 21, 21
+
+    return ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (nx, ny, nz))
+
+@pytest.fixture(scope="function", params=["1D", "2D", "3D"])
+def load_multi_mesh(request, load_1D_regular_mesh, load_2D_regular_mesh, load_3D_regular_mesh):
+    mesh_dict = {"1D": load_1D_regular_mesh, \
+                 "2D": load_2D_regular_mesh, \
+                 "3D": load_3D_regular_mesh }
+
+    mesh_type = request.param
+    return mesh_dict[mesh_type]
+
+
+## Simple forward model and adjoint model for benchmarking
 
 def forward_model(x, self, bc='Z'):
     """
     N-dimensional nonlinear model with flux lower BC
     Implements Hofmeister 1999 temperature-dependent
     conductivity law
-
     Arguments
     ---------
      x : [k_list, H_list, a_list, q0]
-
     Returns
     -------
      cost : scalar
-
     """
     def hofmeister1999(k0, T, a=0.25, c=0.0):
         return k0*(298.0/T)**a + c*T**3
@@ -76,11 +94,9 @@ def adjoint_model(x, self, bc='Z'):
     N-dimensional nonlinear model with flux lower BC
     Implements Hofmeister 1999 temperature-dependent
     conductivity law
-
     Arguments
     ---------
      x : [k_list, H_list, a_list, q0]
-
     Returns
     -------
      cost : scalar
@@ -171,7 +187,7 @@ def adjoint_model(x, self, bc='Z'):
         dH += -db
         dz = self.grid_delta[-1]
         lowerBC_mask = self.mesh.bc["min"+bc]["mask"]
-        dq0_local = np.sum(-db[lowerBC_mask]/dz/inv.ghost_weights[lowerBC_mask])
+        dq0_local = np.sum(-db[lowerBC_mask]/dz/self.ghost_weights[lowerBC_mask])
         dq0_global = np.array(0.0)
         comm.Allreduce([dq0_local, MPI.DOUBLE], [dq0_global, MPI.DOUBLE], op=MPI.SUM)
         dq0 += dq0_global
@@ -181,7 +197,7 @@ def adjoint_model(x, self, bc='Z'):
     dk0 += dk
         
     # pack to lists
-    dk_list, dH_list, da_list = inv.map_ad(dk0, dH, da)
+    dk_list, dH_list, da_list = self.map_ad(dk0, dH, da)
     dk_list += dcdk_list
     dH_list += dcdH_list
     da_list += dcda_list
@@ -192,143 +208,40 @@ def adjoint_model(x, self, bc='Z'):
     return cost, dx
 
 
+@pytest.fixture(scope="function")
+def load_inv_object():
+    minX, maxX = 0.0, 1000.0
+    minY, maxY = 0.0, 1000.0
+    minZ, maxZ = -35e3, 1000.0
+    nx, ny, nz = 10, 10, 10
+    n = nx*ny*nz
+
+    mesh = ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (nx,ny,nz))
+
+    # BCs
+    mesh.boundary_condition('maxZ', 298.0, flux=False)
+    mesh.boundary_condition('minZ', 1e3, flux=True)
 
 
+    # In[3]: Global lithology
 
-minX, maxX = 0.0, 1000.0
-minY, maxY = 0.0, 1000.0
-minZ, maxZ = -35e3, 1000.0
-nx, ny, nz = 10, 10, 10
-n = nx*ny*nz
+    lithology = np.zeros((nz,ny,nx), dtype='int32')
+    lithology[:,3:7,:] = 1
+    lithology[:,7:,:]  = 2
 
-mesh = ConductionND((minX, minY, minZ), (maxX, maxY, maxZ), (nx,ny,nz))
+    # Need to slice this bad boy up: Local lithology
 
-# BCs
-mesh.boundary_condition('maxZ', 298.0, flux=False)
-mesh.boundary_condition('minZ', 1e3, flux=True)
+    (minI, maxI), (minJ, maxJ), (minK, maxK) = mesh.dm.getGhostRanges()
+    lithology = lithology[minK:maxK, minJ:maxJ, minI:maxI]
 
+    k = np.array([3.5, 2.0, 3.2])
+    H = np.array([0.5e-6, 1e-6, 2e-6])
+    a = np.array([0.3, 0.3, 0.3])
+    q0 = 35e-3
+    sigma_q0 = 5e-3
 
-# In[3]: Global lithology
+    # Inversion variables
+    x = np.hstack([k, H, a, [q0]])
+    dx = x*0.01
 
-lithology = np.zeros((nz,ny,nx), dtype='int32')
-lithology[:,3:7,:] = 1
-lithology[:,7:,:]  = 2
-
-# Need to slice this bad boy up: Local lithology
-
-(minI, maxI), (minJ, maxJ), (minK, maxK) = mesh.dm.getGhostRanges()
-lithology = lithology[minK:maxK, minJ:maxJ, minI:maxI]
-
-
-inv = InversionND(lithology.flatten(), mesh)
-
-k = np.array([3.5, 2.0, 3.2])
-H = np.array([0.5e-6, 1e-6, 2e-6])
-a = np.array([0.3, 0.3, 0.3])
-q0 = 35e-3
-sigma_q0 = 5e-3
-
-# Inversion variables
-x = np.hstack([k, H, a, [q0]])
-dx = x*0.01
-
-# Priors
-k_prior = k*1.1
-H_prior = H*1.1
-a_prior = a*1.1
-sigma_k = k*0.1
-sigma_H = H*0.1
-sigma_a = a*0.1
-
-kp = InvPrior(k_prior, sigma_k)
-Hp = InvPrior(H_prior, sigma_H)
-ap = InvPrior(a_prior, sigma_a)
-q0p = InvPrior(q0, sigma_q0)
-inv.add_prior(k=ap, H=Hp, a=ap, q0=q0p)
-
-
-fm0 = forward_model(x, inv)
-fm1 = forward_model(x+dx, inv)
-ad  = adjoint_model(x, inv)
-
-print "\n--- LITHOLOGY PRIORS ---"
-print "finite difference", (fm1 - fm0)
-print "adjoint", ad[1].dot(dx)
-
-
-
-
-inv = InversionND(lithology.flatten(), mesh)
-
-np.random.seed(0)
-
-q_obs = np.ones(5)*0.03
-sigma_q = q_obs*0.5
-q_coord = np.zeros((5,3))
-q_coord[:,0] = np.random.random(5)*1e3
-q_coord[:,1] = np.random.random(5)*1e3
-q_coord[:,2] = 0.0
-q_coord = q_coord
-
-qobs = InvObservation(q_obs, sigma_q, q_coord)
-inv.add_observation(q=qobs)
-
-
-fm0 = forward_model(x, inv)
-fm1 = forward_model(x+dx, inv)
-ad  = adjoint_model(x, inv)
-
-print "\n--- HEAT FLOW OBSERVATIONS ---"
-print "finite difference", (fm1 - fm0)
-print "adjoint", ad[1].dot(dx)
-
-
-
-
-inv = InversionND(lithology.flatten(), mesh)
-
-T_prior = np.ones(mesh.nn)*400.0
-sigma_T = T_prior*0.01
-
-Tobs = InvObservation(T_prior, sigma_T, mesh.coords)
-inv.add_observation(T=Tobs)
-
-
-fm0 = forward_model(x, inv)
-fm1 = forward_model(x+dx, inv)
-ad  = adjoint_model(x, inv)
-
-print "\n--- TEMPERATURE PRIOR ---"
-print "finite difference", (fm1 - fm0)
-print "adjoint", ad[1].dot(dx), #"\n", gradient.array
-
-
-# ## TAO solve
-# 
-# Solve a minimisation problem. TAO provides a number of minimisation schemes,
-# some which require the gradient and Hessian.
-
-# inv_x = x.copy()
-
-# lower_bound = x.duplicate()
-# lower_bound.array[:3] = 0.5 # conductivity
-# lower_bound.array[-1] = 5e-3 # q0
-
-# upper_bound = x.duplicate()
-# upper_bound.array[:3] = 4.5 #conductivity
-# upper_bound.array[3:6] = 5e-6 # heat production
-# upper_bound.array[6:9] = 1.0 # a
-# upper_bound.array[-1] = 45e-3 # q0
-
-
-# tao = PETSc.TAO().create(comm)
-# tao.setType('blmvm')
-# tao.setVariableBounds(lower_bound, upper_bound)
-# tao.setObjectiveGradient(adjoint_model)
-# tao.setFromOptions()
-
-# t = clock()
-# tao.solve(inv_x)
-# print "\nCompleted in", clock()-t
-# print tao.getConvergedReason(), tao.getIterationNumber()
-# print x.array
+    return InversionND(lithology.ravel(), mesh)

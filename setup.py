@@ -48,7 +48,7 @@ if PYPI_VERSION is None:
     PYPI_VERSION = git_version()
 
 this_directory = path.abspath(path.dirname(__file__))
-with open(path.join(this_directory, "README.md")) as f:
+with open(path.join(this_directory, "README.md"), encoding='utf-8') as f:
     long_description = f.read()
 
 
@@ -75,8 +75,9 @@ if __name__ == "__main__":
         package_data={
             "conduction": [
                 "Examples/*.ipynb",
+                "Examples/data/*",
                 "Examples/Notebooks/*.ipynb",
-                "Examples/Scripts/*.py",
+                "Examples/Scripts/*.py"
             ]
         },
         classifiers=[

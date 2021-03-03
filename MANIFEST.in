@@ -7,3 +7,4 @@ include setup.cfg
 recursive-include conduction/ *.py
 recursive-include conduction/ *.ipynb
 include tests/*.py
+recursive-include conduction/Examples/data/
