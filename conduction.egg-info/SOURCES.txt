@@ -1,0 +1,81 @@
+CONTRIBUTING.md
+COPYING
+COPYING.LESSER
+MANIFEST.in
+README.md
+setup.cfg
+setup.py
+conduction/__init__.py
+conduction.egg-info/PKG-INFO
+conduction.egg-info/SOURCES.txt
+conduction.egg-info/dependency_links.txt
+conduction.egg-info/requires.txt
+conduction.egg-info/top_level.txt
+conduction/Examples/Notebooks/Autodiff.ipynb
+conduction/Examples/Notebooks/Flood fill algorithm.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - Hofmeister 1999.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - centroid distance.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - data covariance.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - gradient.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - gravity.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - interpolation.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - lithology ratios.ipynb
+conduction/Examples/Notebooks/Inversion benchmark - prior covariance.ipynb
+conduction/Examples/Notebooks/Inversion self-destruct nonlinear.ipynb
+conduction/Examples/Notebooks/Inversion self-destruct ratios.ipynb
+conduction/Examples/Notebooks/Inversion self-destruct velocity.ipynb
+conduction/Examples/Notebooks/Inversion self-destruct.ipynb
+conduction/Examples/Notebooks/Inversion.ipynb
+conduction/Examples/Notebooks/Parameter sensitivity.ipynb
+conduction/Examples/Notebooks/Rectilinear mesh benchmark.ipynb
+conduction/Examples/Notebooks/Rectilinear mesh.ipynb
+conduction/Examples/Notebooks/Xdmf paraview.ipynb
+conduction/Examples/Notebooks/geological model plot layers - refined crust.ipynb
+conduction/Examples/Notebooks/manipulate xyz.ipynb
+conduction/Examples/Notebooks/nonlinear conductivity.ipynb
+conduction/Examples/Notebooks/project lat-lon.ipynb
+conduction/Examples/Notebooks/scaling results.ipynb
+conduction/Examples/Scripts/forward_geological_model.py
+conduction/Examples/Scripts/geological_model.py
+conduction/Examples/Scripts/geological_model_granites.py
+conduction/Examples/Scripts/geological_model_timesteps.py
+conduction/Examples/Scripts/invert_geological_model.py
+conduction/Examples/Scripts/invert_geological_model_lab.py
+conduction/Examples/Scripts/invert_ireland.py
+conduction/Examples/Scripts/invert_ireland_mod.py
+conduction/Examples/Scripts/invert_ireland_mod_mesh.py
+conduction/Examples/Scripts/sensitivity_geological_model.py
+conduction/interpolation/__init__.py
+conduction/interpolation/interpolator.py
+conduction/interpolation/interpolator_legacy.py
+conduction/inversion/__init__.py
+conduction/inversion/adjoint_models.py
+conduction/inversion/covariance.py
+conduction/inversion/grad_ad.py
+conduction/inversion/inverse_conduction.py
+conduction/inversion/nd_inverse_conduction.py
+conduction/inversion/objective_variables.py
+conduction/mesh/__init__.py
+conduction/mesh/mesh_variables.py
+conduction/solver/__init__.py
+conduction/solver/conduction3d.py
+conduction/solver/conductionNd.py
+conduction/solver/conductionNd_serial.py
+conduction/solver/diffusionNd.py
+conduction/solver/diffusionNd_serial.py
+conduction/toolbox/conductionNd_serial.py
+conduction/toolbox/conduction_toolbox.py
+conduction/tools/__init__.py
+conduction/tools/flood_fill.py
+conduction/tools/generate_timeseries_xdmf.py
+conduction/tools/generate_xdmf.py
+conduction/tools/meshtools.py
+conduction/tools/perplex_helper.py
+tests/conftest.py
+tests/test_0_imports.py
+tests/test_1_mesh_setup.py
+tests/test_2_mesh_variables.py
+tests/test_3_ConductionND_object.py
+tests/test_4_InversionND_object.py
+tests/test_5_covariance.py
+tests/test_6_DiffusionND_object.py
